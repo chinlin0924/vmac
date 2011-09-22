@@ -1,0 +1,718 @@
+Tminivmac
+v7
+r0
+t338393247.116689
+cCheck dependencies
+cProcessInfoPlistFile /Volumes/MacOS2/vmac/minivmac.app/Contents/Info.plist src/Info.plist
+cCpResource minivmac.app/Contents/Resources/AppIcon.icns src/AppIcon.icns
+cCpResource minivmac.app/Contents/Resources/English.lproj/dummy.txt src/English.lproj/dummy.txt
+cCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/MYOSGLUE.o /Volumes/MacOS2/vmac/src/MYOSGLUE.c normal i386 c com.apple.compilers.gcc.4_0
+cCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/GLOBGLUE.o /Volumes/MacOS2/vmac/src/GLOBGLUE.c normal i386 c com.apple.compilers.gcc.4_0
+cCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/M68KITAB.o /Volumes/MacOS2/vmac/src/M68KITAB.c normal i386 c com.apple.compilers.gcc.4_0
+cCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/MINEM68K.o /Volumes/MacOS2/vmac/src/MINEM68K.c normal i386 c com.apple.compilers.gcc.4_0
+cCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/VIAEMDEV.o /Volumes/MacOS2/vmac/src/VIAEMDEV.c normal i386 c com.apple.compilers.gcc.4_0
+cCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/IWMEMDEV.o /Volumes/MacOS2/vmac/src/IWMEMDEV.c normal i386 c com.apple.compilers.gcc.4_0
+cCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/SCCEMDEV.o /Volumes/MacOS2/vmac/src/SCCEMDEV.c normal i386 c com.apple.compilers.gcc.4_0
+cCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/RTCEMDEV.o /Volumes/MacOS2/vmac/src/RTCEMDEV.c normal i386 c com.apple.compilers.gcc.4_0
+cCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/ROMEMDEV.o /Volumes/MacOS2/vmac/src/ROMEMDEV.c normal i386 c com.apple.compilers.gcc.4_0
+cCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/SCSIEMDV.o /Volumes/MacOS2/vmac/src/SCSIEMDV.c normal i386 c com.apple.compilers.gcc.4_0
+cCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/SONYEMDV.o /Volumes/MacOS2/vmac/src/SONYEMDV.c normal i386 c com.apple.compilers.gcc.4_0
+cCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/SNDEMDEV.o /Volumes/MacOS2/vmac/src/SNDEMDEV.c normal i386 c com.apple.compilers.gcc.4_0
+cCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/SCRNEMDV.o /Volumes/MacOS2/vmac/src/SCRNEMDV.c normal i386 c com.apple.compilers.gcc.4_0
+cCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/ADBEMDEV.o /Volumes/MacOS2/vmac/src/ADBEMDEV.c normal i386 c com.apple.compilers.gcc.4_0
+cCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/MOUSEMDV.o /Volumes/MacOS2/vmac/src/MOUSEMDV.c normal i386 c com.apple.compilers.gcc.4_0
+cLd /Volumes/MacOS2/vmac/minivmac.app/Contents/MacOS/minivmac normal i386
+cTouch /Volumes/MacOS2/vmac/minivmac.app
+cStrip /Volumes/MacOS2/vmac/minivmac.app/Contents/MacOS/minivmac
+
+N/Developer/SDKs/MacOSX10.5.sdk
+c000000004C238B9B00000000000000EE
+t1277397915
+s238
+
+N/Developer/SDKs/MacOSX10.5.sdk/System/Library/Frameworks/AGL.framework/Headers/agl.h
+c0000000047BB08D70000000000005168
+t1203439831
+s20840
+
+N/Developer/SDKs/MacOSX10.5.sdk/System/Library/Frameworks/Carbon.framework/Headers/Carbon.h
+c000000004864BE3E00000000000005D7
+t1214561854
+s1495
+
+N/Developer/SDKs/MacOSX10.5.sdk/usr/include/stdio.h
+c0000000047BA99310000000000003D1D
+t1203411249
+s15645
+
+N/System/Library/Frameworks/AGL.framework/AGL
+c000000004BD2589F0000000000043820
+t1272076447
+s276512
+
+N/System/Library/Frameworks/Carbon.framework/Carbon
+c000000004C0FDD7E000000000000A5F0
+t1276108158
+s42480
+
+N/System/Library/Frameworks/OpenGL.framework/OpenGL
+c000000004D7713DA0000000000043330
+t1299649498
+s275248
+
+N/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/ADBEMDEV.o
+t1316700441
+s3668
+
+N/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/GLOBGLUE.o
+t1316700439
+s9420
+
+N/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/IWMEMDEV.o
+t1316700440
+s1340
+
+N/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/M68KITAB.o
+t1316700439
+s4212
+
+N/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/MINEM68K.o
+t1316700440
+s26512
+
+N/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/MOUSEMDV.o
+t1316700441
+s868
+
+N/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/MYOSGLUE.o
+t1316700446
+s56868
+
+N/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/ROMEMDEV.o
+t1316700440
+s1772
+
+N/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/RTCEMDEV.o
+t1316700440
+s2848
+
+N/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/SCCEMDEV.o
+t1316700440
+s3792
+
+N/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/SCRNEMDV.o
+t1316700440
+s1080
+
+N/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/SCSIEMDV.o
+t1316700440
+s1104
+
+N/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/SNDEMDEV.o
+t1316700440
+s1612
+
+N/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/SONYEMDV.o
+t1316700440
+s8004
+
+N/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/VIAEMDEV.o
+t1316700440
+s8364
+
+N/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/minivmac.LinkFileList
+c000000004E7B411600000000000005A0
+t1316700438
+s1440
+
+N/Volumes/MacOS2/vmac/minivmac.app
+t1316700447
+s102
+
+N/Volumes/MacOS2/vmac/minivmac.app/Contents/Info.plist
+t1316700438
+s1157
+
+N/Volumes/MacOS2/vmac/minivmac.app/Contents/MacOS/minivmac
+t1316700447
+s95992
+
+N/Volumes/MacOS2/vmac/minivmac.app/Contents/PkgInfo
+t1316700438
+s8
+
+N/Volumes/MacOS2/vmac/minivmac.app/Contents/Resources/AppIcon.icns
+t1316700438
+s2296
+
+N/Volumes/MacOS2/vmac/minivmac.app/Contents/Resources/English.lproj/dummy.txt
+t1316700438
+s6
+
+N/Volumes/MacOS2/vmac/src/ADBEMDEV.c
+c000000004E7B406E00000000000013EA
+t1316700270
+s5098
+i"SYSDEPNS.h"
+i"MYOSGLUE.h"
+i"EMCONFIG.h"
+i"GLOBGLUE.h"
+i"ADBEMDEV.h"
+i<stdio.h>
+i"ADBSHARE.h"
+
+N/Volumes/MacOS2/vmac/src/ADBEMDEV.h
+c000000004E7B406E00000000000002ED
+t1316700270
+s749
+
+N/Volumes/MacOS2/vmac/src/ADBSHARE.h
+c000000004E7B406E0000000000001672
+t1316700270
+s5746
+
+N/Volumes/MacOS2/vmac/src/AppIcon.icns
+c000000004E7B406E00000000000008F8
+t1316700270
+s2296
+
+N/Volumes/MacOS2/vmac/src/CNFGGLOB.h
+c000000004E7B406E0000000000000491
+t1316700270
+s1169
+
+N/Volumes/MacOS2/vmac/src/CNFGRAPI.h
+c000000004E7B406E0000000000000405
+t1316700270
+s1029
+i<Carbon/Carbon.h>
+i<AGL/agl.h>
+
+N/Volumes/MacOS2/vmac/src/CONTROLM.h
+c000000004E7B406E0000000000011C53
+t1316700270
+s72787
+i"ALTKEYSM.h"
+i"ACTVCODE.h"
+
+N/Volumes/MacOS2/vmac/src/DATE2SEC.h
+c000000004E7B406E0000000000000FE0
+t1316700270
+s4064
+
+N/Volumes/MacOS2/vmac/src/EMCONFIG.h
+c000000004E7B406E00000000000010E0
+t1316700270
+s4320
+
+N/Volumes/MacOS2/vmac/src/ENDIANAC.h
+c000000004E7B406E0000000000000ADE
+t1316700270
+s2782
+
+N/Volumes/MacOS2/vmac/src/English.lproj/dummy.txt
+c000000004E7B406E0000000000000006
+t1316700270
+s6
+
+N/Volumes/MacOS2/vmac/src/GLOBGLUE.c
+c000000004E7B406E000000000000966A
+t1316700270
+s38506
+i"SYSDEPNS.h"
+i"MYOSGLUE.h"
+i"ENDIANAC.h"
+i"EMCONFIG.h"
+i"GLOBGLUE.h"
+i<stdio.h>
+
+N/Volumes/MacOS2/vmac/src/GLOBGLUE.h
+c000000004E7B406E0000000000001655
+t1316700270
+s5717
+
+N/Volumes/MacOS2/vmac/src/IWMEMDEV.c
+c000000004E7B406E00000000000011C7
+t1316700270
+s4551
+i"SYSDEPNS.h"
+i"MYOSGLUE.h"
+i"EMCONFIG.h"
+i"GLOBGLUE.h"
+i"IWMEMDEV.h"
+
+N/Volumes/MacOS2/vmac/src/IWMEMDEV.h
+c000000004E7B406E00000000000002CF
+t1316700270
+s719
+
+N/Volumes/MacOS2/vmac/src/M68KITAB.c
+c000000004E7B406E0000000000004895
+t1316700270
+s18581
+i"SYSDEPNS.h"
+i"MYOSGLUE.h"
+i"EMCONFIG.h"
+i"M68KITAB.h"
+
+N/Volumes/MacOS2/vmac/src/M68KITAB.h
+c000000004E7B406E000000000000092B
+t1316700270
+s2347
+
+N/Volumes/MacOS2/vmac/src/MINEM68K.c
+c000000004E7B406E0000000000014109
+t1316700270
+s82185
+i"SYSDEPNS.h"
+i"ENDIANAC.h"
+i"MYOSGLUE.h"
+i"EMCONFIG.h"
+i"GLOBGLUE.h"
+i"M68KITAB.h"
+i"MINEM68K.h"
+
+N/Volumes/MacOS2/vmac/src/MINEM68K.h
+c000000004E7B406E000000000000040C
+t1316700270
+s1036
+
+N/Volumes/MacOS2/vmac/src/MOUSEMDV.c
+c000000004E7B406E0000000000000ACE
+t1316700270
+s2766
+i"SYSDEPNS.h"
+i"MYOSGLUE.h"
+i"ENDIANAC.h"
+i"EMCONFIG.h"
+i"GLOBGLUE.h"
+i"SCCEMDEV.h"
+i"MOUSEMDV.h"
+
+N/Volumes/MacOS2/vmac/src/MOUSEMDV.h
+c000000004E7B406E0000000000000290
+t1316700270
+s656
+
+N/Volumes/MacOS2/vmac/src/MYOSGLUE.c
+c000000004E7B406E0000000000001F7F
+t1316700270
+s8063
+i"CNFGRAPI.h"
+i"SYSDEPNS.h"
+i"ENDIANAC.h"
+i"MYOSGLUE.h"
+i"STRCONST.h"
+i"PLATGLUE.h"
+
+N/Volumes/MacOS2/vmac/src/MYOSGLUE.h
+c000000004E7B406E000000000000233E
+t1316700270
+s9022
+
+N/Volumes/MacOS2/vmac/src/PLATGLUE.h
+c000000004E7B406E000000000001A8AA
+t1316700270
+s108714
+i"CONTROLM.h"
+i<stdio.h>
+i"DATE2SEC.h"
+
+N/Volumes/MacOS2/vmac/src/ROMEMDEV.c
+c000000004E7B406E00000000000022EE
+t1316700270
+s8942
+i"SYSDEPNS.h"
+i"MYOSGLUE.h"
+i"ENDIANAC.h"
+i"EMCONFIG.h"
+i"GLOBGLUE.h"
+i"ROMEMDEV.h"
+i"SCRNHACK.h"
+
+N/Volumes/MacOS2/vmac/src/ROMEMDEV.h
+c000000004E7B406E0000000000000291
+t1316700270
+s657
+
+N/Volumes/MacOS2/vmac/src/RTCEMDEV.c
+c000000004E7B406E0000000000002AC2
+t1316700270
+s10946
+i"SYSDEPNS.h"
+i"MYOSGLUE.h"
+i"ENDIANAC.h"
+i"EMCONFIG.h"
+i"GLOBGLUE.h"
+i<stdio.h>
+i"RTCEMDEV.h"
+i<stdio.h>
+
+N/Volumes/MacOS2/vmac/src/RTCEMDEV.h
+c000000004E7B406E000000000000032B
+t1316700270
+s811
+
+N/Volumes/MacOS2/vmac/src/SCCEMDEV.c
+c000000004E7B406E0000000000007EA7
+t1316700270
+s32423
+i"SYSDEPNS.h"
+i"MYOSGLUE.h"
+i"EMCONFIG.h"
+i"GLOBGLUE.h"
+i"SCCEMDEV.h"
+
+N/Volumes/MacOS2/vmac/src/SCCEMDEV.h
+c000000004E7B406E00000000000002FD
+t1316700270
+s765
+
+N/Volumes/MacOS2/vmac/src/SCRNEMDV.c
+c000000004E7B406E0000000000001274
+t1316700270
+s4724
+i"SYSDEPNS.h"
+i"MYOSGLUE.h"
+i"ENDIANAC.h"
+i"EMCONFIG.h"
+i"GLOBGLUE.h"
+i"SCRNEMDV.h"
+
+N/Volumes/MacOS2/vmac/src/SCRNEMDV.h
+c000000004E7B406E00000000000002EE
+t1316700270
+s750
+
+N/Volumes/MacOS2/vmac/src/SCSIEMDV.c
+c000000004E7B406E0000000000000F58
+t1316700270
+s3928
+i"SYSDEPNS.h"
+i"ENDIANAC.h"
+i"MYOSGLUE.h"
+i"EMCONFIG.h"
+i"GLOBGLUE.h"
+i"SCSIEMDV.h"
+
+N/Volumes/MacOS2/vmac/src/SCSIEMDV.h
+c000000004E7B406E00000000000002D1
+t1316700270
+s721
+
+N/Volumes/MacOS2/vmac/src/SNDEMDEV.c
+c000000004E7B406E0000000000001116
+t1316700270
+s4374
+i"SYSDEPNS.h"
+i"MYOSGLUE.h"
+i"EMCONFIG.h"
+i"GLOBGLUE.h"
+i"SNDEMDEV.h"
+
+N/Volumes/MacOS2/vmac/src/SNDEMDEV.h
+c000000004E7B406E00000000000002B5
+t1316700270
+s693
+
+N/Volumes/MacOS2/vmac/src/SONYEMDV.c
+c000000004E7B406E0000000000008845
+t1316700270
+s34885
+i"SYSDEPNS.h"
+i"MYOSGLUE.h"
+i"ENDIANAC.h"
+i"EMCONFIG.h"
+i"GLOBGLUE.h"
+i"MINEM68K.h"
+i"SONYEMDV.h"
+
+N/Volumes/MacOS2/vmac/src/SONYEMDV.h
+c000000004E7B406E0000000000000332
+t1316700270
+s818
+
+N/Volumes/MacOS2/vmac/src/STRCONST.h
+c000000004E7B406E0000000000001AC8
+t1316700270
+s6856
+
+N/Volumes/MacOS2/vmac/src/SYSDEPNS.h
+c000000004E7B406E0000000000000D29
+t1316700270
+s3369
+i"CNFGGLOB.h"
+
+N/Volumes/MacOS2/vmac/src/VIAEMDEV.c
+c000000004E7B406E0000000000005F82
+t1316700270
+s24450
+i"SYSDEPNS.h"
+i"MYOSGLUE.h"
+i"EMCONFIG.h"
+i"GLOBGLUE.h"
+i"VIAEMDEV.h"
+i<stdio.h>
+
+N/Volumes/MacOS2/vmac/src/VIAEMDEV.h
+c000000004E7B406E0000000000000449
+t1316700270
+s1097
+
+Nsrc/Info.plist
+c000000004E7B406E000000000000048E
+t1316700270
+s1166
+
+CCheck dependencies
+r0
+lSLF07#2@18"Check dependencies338393238#338393238#0(0"0(0#1#0"8605850208#0"0#
+
+CCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/ADBEMDEV.o /Volumes/MacOS2/vmac/src/ADBEMDEV.c normal i386 c com.apple.compilers.gcc.4_0
+s338393240.920295
+e338393241.019788
+r1
+xCompileC
+xbuild/minivmac.build/Release/minivmac.build/Objects-normal/i386/ADBEMDEV.o
+x/Volumes/MacOS2/vmac/src/ADBEMDEV.c
+xnormal
+xi386
+xc
+xcom.apple.compilers.gcc.4_0
+lSLF07#2@43"Compile /Volumes/MacOS2/vmac/src/ADBEMDEV.c338393240#338393241#0(0"0(0#0#35"/Volumes/MacOS2/vmac/src/ADBEMDEV.c8600469184#759"    cd /Volumes/MacOS2/vmac    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.0 -x c -arch i386 -fmessage-length=0 -pipe -Wno-trigraphs -fpascal-strings -Os -mdynamic-no-pic -Wmissing-prototypes -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.4 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/minivmac.hmap -Wall -Wstrict-prototypes -Wno-uninitialized -F/Volumes/MacOS2/vmac -I/Volumes/MacOS2/vmac/include -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources/i386 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources -c /Volumes/MacOS2/vmac/src/ADBEMDEV.c -o /Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/ADBEMDEV.o0#
+
+CCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/GLOBGLUE.o /Volumes/MacOS2/vmac/src/GLOBGLUE.c normal i386 c com.apple.compilers.gcc.4_0
+s338393238.937431
+e338393239.421181
+r1
+xCompileC
+xbuild/minivmac.build/Release/minivmac.build/Objects-normal/i386/GLOBGLUE.o
+x/Volumes/MacOS2/vmac/src/GLOBGLUE.c
+xnormal
+xi386
+xc
+xcom.apple.compilers.gcc.4_0
+lSLF07#2@43"Compile /Volumes/MacOS2/vmac/src/GLOBGLUE.c338393238#338393239#0(0"0(0#0#35"/Volumes/MacOS2/vmac/src/GLOBGLUE.c8600673120#759"    cd /Volumes/MacOS2/vmac    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.0 -x c -arch i386 -fmessage-length=0 -pipe -Wno-trigraphs -fpascal-strings -Os -mdynamic-no-pic -Wmissing-prototypes -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.4 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/minivmac.hmap -Wall -Wstrict-prototypes -Wno-uninitialized -F/Volumes/MacOS2/vmac -I/Volumes/MacOS2/vmac/include -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources/i386 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources -c /Volumes/MacOS2/vmac/src/GLOBGLUE.c -o /Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/GLOBGLUE.o0#
+
+CCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/IWMEMDEV.o /Volumes/MacOS2/vmac/src/IWMEMDEV.c normal i386 c com.apple.compilers.gcc.4_0
+s338393240.390280
+e338393240.431592
+r1
+xCompileC
+xbuild/minivmac.build/Release/minivmac.build/Objects-normal/i386/IWMEMDEV.o
+x/Volumes/MacOS2/vmac/src/IWMEMDEV.c
+xnormal
+xi386
+xc
+xcom.apple.compilers.gcc.4_0
+lSLF07#2@43"Compile /Volumes/MacOS2/vmac/src/IWMEMDEV.c338393240#338393240#0(0"0(0#0#35"/Volumes/MacOS2/vmac/src/IWMEMDEV.c8605790112#759"    cd /Volumes/MacOS2/vmac    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.0 -x c -arch i386 -fmessage-length=0 -pipe -Wno-trigraphs -fpascal-strings -Os -mdynamic-no-pic -Wmissing-prototypes -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.4 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/minivmac.hmap -Wall -Wstrict-prototypes -Wno-uninitialized -F/Volumes/MacOS2/vmac -I/Volumes/MacOS2/vmac/include -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources/i386 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources -c /Volumes/MacOS2/vmac/src/IWMEMDEV.c -o /Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/IWMEMDEV.o0#
+
+CCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/M68KITAB.o /Volumes/MacOS2/vmac/src/M68KITAB.c normal i386 c com.apple.compilers.gcc.4_0
+s338393239.421272
+e338393239.582027
+r1
+xCompileC
+xbuild/minivmac.build/Release/minivmac.build/Objects-normal/i386/M68KITAB.o
+x/Volumes/MacOS2/vmac/src/M68KITAB.c
+xnormal
+xi386
+xc
+xcom.apple.compilers.gcc.4_0
+lSLF07#2@43"Compile /Volumes/MacOS2/vmac/src/M68KITAB.c338393239#338393239#0(0"0(0#0#35"/Volumes/MacOS2/vmac/src/M68KITAB.c8599050688#759"    cd /Volumes/MacOS2/vmac    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.0 -x c -arch i386 -fmessage-length=0 -pipe -Wno-trigraphs -fpascal-strings -Os -mdynamic-no-pic -Wmissing-prototypes -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.4 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/minivmac.hmap -Wall -Wstrict-prototypes -Wno-uninitialized -F/Volumes/MacOS2/vmac -I/Volumes/MacOS2/vmac/include -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources/i386 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources -c /Volumes/MacOS2/vmac/src/M68KITAB.c -o /Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/M68KITAB.o0#
+
+CCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/MINEM68K.o /Volumes/MacOS2/vmac/src/MINEM68K.c normal i386 c com.apple.compilers.gcc.4_0
+s338393239.582124
+e338393240.186451
+r1
+xCompileC
+xbuild/minivmac.build/Release/minivmac.build/Objects-normal/i386/MINEM68K.o
+x/Volumes/MacOS2/vmac/src/MINEM68K.c
+xnormal
+xi386
+xc
+xcom.apple.compilers.gcc.4_0
+lSLF07#2@43"Compile /Volumes/MacOS2/vmac/src/MINEM68K.c338393239#338393240#0(0"0(0#0#35"/Volumes/MacOS2/vmac/src/MINEM68K.c8606285440#759"    cd /Volumes/MacOS2/vmac    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.0 -x c -arch i386 -fmessage-length=0 -pipe -Wno-trigraphs -fpascal-strings -Os -mdynamic-no-pic -Wmissing-prototypes -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.4 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/minivmac.hmap -Wall -Wstrict-prototypes -Wno-uninitialized -F/Volumes/MacOS2/vmac -I/Volumes/MacOS2/vmac/include -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources/i386 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources -c /Volumes/MacOS2/vmac/src/MINEM68K.c -o /Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/MINEM68K.o0#
+
+CCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/MOUSEMDV.o /Volumes/MacOS2/vmac/src/MOUSEMDV.c normal i386 c com.apple.compilers.gcc.4_0
+s338393241.019887
+e338393241.055974
+r1
+xCompileC
+xbuild/minivmac.build/Release/minivmac.build/Objects-normal/i386/MOUSEMDV.o
+x/Volumes/MacOS2/vmac/src/MOUSEMDV.c
+xnormal
+xi386
+xc
+xcom.apple.compilers.gcc.4_0
+lSLF07#2@43"Compile /Volumes/MacOS2/vmac/src/MOUSEMDV.c338393241#338393241#0(0"0(0#0#35"/Volumes/MacOS2/vmac/src/MOUSEMDV.c8604099392#759"    cd /Volumes/MacOS2/vmac    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.0 -x c -arch i386 -fmessage-length=0 -pipe -Wno-trigraphs -fpascal-strings -Os -mdynamic-no-pic -Wmissing-prototypes -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.4 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/minivmac.hmap -Wall -Wstrict-prototypes -Wno-uninitialized -F/Volumes/MacOS2/vmac -I/Volumes/MacOS2/vmac/include -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources/i386 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources -c /Volumes/MacOS2/vmac/src/MOUSEMDV.c -o /Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/MOUSEMDV.o0#
+
+CCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/MYOSGLUE.o /Volumes/MacOS2/vmac/src/MYOSGLUE.c normal i386 c com.apple.compilers.gcc.4_0
+s338393238.936630
+e338393246.899774
+r1
+xCompileC
+xbuild/minivmac.build/Release/minivmac.build/Objects-normal/i386/MYOSGLUE.o
+x/Volumes/MacOS2/vmac/src/MYOSGLUE.c
+xnormal
+xi386
+xc
+xcom.apple.compilers.gcc.4_0
+lSLF07#2@43"Compile /Volumes/MacOS2/vmac/src/MYOSGLUE.c338393238#338393246#0(0"0(0#0#35"/Volumes/MacOS2/vmac/src/MYOSGLUE.c8601061376#759"    cd /Volumes/MacOS2/vmac    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.0 -x c -arch i386 -fmessage-length=0 -pipe -Wno-trigraphs -fpascal-strings -Os -mdynamic-no-pic -Wmissing-prototypes -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.4 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/minivmac.hmap -Wall -Wstrict-prototypes -Wno-uninitialized -F/Volumes/MacOS2/vmac -I/Volumes/MacOS2/vmac/include -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources/i386 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources -c /Volumes/MacOS2/vmac/src/MYOSGLUE.c -o /Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/MYOSGLUE.o0#
+
+CCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/ROMEMDEV.o /Volumes/MacOS2/vmac/src/ROMEMDEV.c normal i386 c com.apple.compilers.gcc.4_0
+s338393240.594675
+e338393240.631400
+r1
+xCompileC
+xbuild/minivmac.build/Release/minivmac.build/Objects-normal/i386/ROMEMDEV.o
+x/Volumes/MacOS2/vmac/src/ROMEMDEV.c
+xnormal
+xi386
+xc
+xcom.apple.compilers.gcc.4_0
+lSLF07#2@43"Compile /Volumes/MacOS2/vmac/src/ROMEMDEV.c338393240#338393240#0(0"0(0#0#35"/Volumes/MacOS2/vmac/src/ROMEMDEV.c8604004224#759"    cd /Volumes/MacOS2/vmac    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.0 -x c -arch i386 -fmessage-length=0 -pipe -Wno-trigraphs -fpascal-strings -Os -mdynamic-no-pic -Wmissing-prototypes -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.4 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/minivmac.hmap -Wall -Wstrict-prototypes -Wno-uninitialized -F/Volumes/MacOS2/vmac -I/Volumes/MacOS2/vmac/include -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources/i386 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources -c /Volumes/MacOS2/vmac/src/ROMEMDEV.c -o /Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/ROMEMDEV.o0#
+
+CCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/RTCEMDEV.o /Volumes/MacOS2/vmac/src/RTCEMDEV.c normal i386 c com.apple.compilers.gcc.4_0
+s338393240.522415
+e338393240.594573
+r1
+xCompileC
+xbuild/minivmac.build/Release/minivmac.build/Objects-normal/i386/RTCEMDEV.o
+x/Volumes/MacOS2/vmac/src/RTCEMDEV.c
+xnormal
+xi386
+xc
+xcom.apple.compilers.gcc.4_0
+lSLF07#2@43"Compile /Volumes/MacOS2/vmac/src/RTCEMDEV.c338393240#338393240#0(0"0(0#0#35"/Volumes/MacOS2/vmac/src/RTCEMDEV.c8594979616#759"    cd /Volumes/MacOS2/vmac    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.0 -x c -arch i386 -fmessage-length=0 -pipe -Wno-trigraphs -fpascal-strings -Os -mdynamic-no-pic -Wmissing-prototypes -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.4 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/minivmac.hmap -Wall -Wstrict-prototypes -Wno-uninitialized -F/Volumes/MacOS2/vmac -I/Volumes/MacOS2/vmac/include -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources/i386 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources -c /Volumes/MacOS2/vmac/src/RTCEMDEV.c -o /Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/RTCEMDEV.o0#
+
+CCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/SCCEMDEV.o /Volumes/MacOS2/vmac/src/SCCEMDEV.c normal i386 c com.apple.compilers.gcc.4_0
+s338393240.431776
+e338393240.522327
+r1
+xCompileC
+xbuild/minivmac.build/Release/minivmac.build/Objects-normal/i386/SCCEMDEV.o
+x/Volumes/MacOS2/vmac/src/SCCEMDEV.c
+xnormal
+xi386
+xc
+xcom.apple.compilers.gcc.4_0
+lSLF07#2@43"Compile /Volumes/MacOS2/vmac/src/SCCEMDEV.c338393240#338393240#0(0"0(0#0#35"/Volumes/MacOS2/vmac/src/SCCEMDEV.c8600707264#759"    cd /Volumes/MacOS2/vmac    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.0 -x c -arch i386 -fmessage-length=0 -pipe -Wno-trigraphs -fpascal-strings -Os -mdynamic-no-pic -Wmissing-prototypes -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.4 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/minivmac.hmap -Wall -Wstrict-prototypes -Wno-uninitialized -F/Volumes/MacOS2/vmac -I/Volumes/MacOS2/vmac/include -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources/i386 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources -c /Volumes/MacOS2/vmac/src/SCCEMDEV.c -o /Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/SCCEMDEV.o0#
+
+CCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/SCRNEMDV.o /Volumes/MacOS2/vmac/src/SCRNEMDV.c normal i386 c com.apple.compilers.gcc.4_0
+s338393240.881360
+e338393240.920196
+r1
+xCompileC
+xbuild/minivmac.build/Release/minivmac.build/Objects-normal/i386/SCRNEMDV.o
+x/Volumes/MacOS2/vmac/src/SCRNEMDV.c
+xnormal
+xi386
+xc
+xcom.apple.compilers.gcc.4_0
+lSLF07#2@43"Compile /Volumes/MacOS2/vmac/src/SCRNEMDV.c338393240#338393240#0(0"0(0#0#35"/Volumes/MacOS2/vmac/src/SCRNEMDV.c8601121184#759"    cd /Volumes/MacOS2/vmac    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.0 -x c -arch i386 -fmessage-length=0 -pipe -Wno-trigraphs -fpascal-strings -Os -mdynamic-no-pic -Wmissing-prototypes -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.4 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/minivmac.hmap -Wall -Wstrict-prototypes -Wno-uninitialized -F/Volumes/MacOS2/vmac -I/Volumes/MacOS2/vmac/include -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources/i386 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources -c /Volumes/MacOS2/vmac/src/SCRNEMDV.c -o /Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/SCRNEMDV.o0#
+
+CCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/SCSIEMDV.o /Volumes/MacOS2/vmac/src/SCSIEMDV.c normal i386 c com.apple.compilers.gcc.4_0
+s338393240.631504
+e338393240.675620
+r1
+xCompileC
+xbuild/minivmac.build/Release/minivmac.build/Objects-normal/i386/SCSIEMDV.o
+x/Volumes/MacOS2/vmac/src/SCSIEMDV.c
+xnormal
+xi386
+xc
+xcom.apple.compilers.gcc.4_0
+lSLF07#2@43"Compile /Volumes/MacOS2/vmac/src/SCSIEMDV.c338393240#338393240#0(0"0(0#0#35"/Volumes/MacOS2/vmac/src/SCSIEMDV.c8603919040#759"    cd /Volumes/MacOS2/vmac    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.0 -x c -arch i386 -fmessage-length=0 -pipe -Wno-trigraphs -fpascal-strings -Os -mdynamic-no-pic -Wmissing-prototypes -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.4 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/minivmac.hmap -Wall -Wstrict-prototypes -Wno-uninitialized -F/Volumes/MacOS2/vmac -I/Volumes/MacOS2/vmac/include -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources/i386 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources -c /Volumes/MacOS2/vmac/src/SCSIEMDV.c -o /Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/SCSIEMDV.o0#
+
+CCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/SNDEMDEV.o /Volumes/MacOS2/vmac/src/SNDEMDEV.c normal i386 c com.apple.compilers.gcc.4_0
+s338393240.835927
+e338393240.881258
+r1
+xCompileC
+xbuild/minivmac.build/Release/minivmac.build/Objects-normal/i386/SNDEMDEV.o
+x/Volumes/MacOS2/vmac/src/SNDEMDEV.c
+xnormal
+xi386
+xc
+xcom.apple.compilers.gcc.4_0
+lSLF07#2@43"Compile /Volumes/MacOS2/vmac/src/SNDEMDEV.c338393240#338393240#0(0"0(0#0#35"/Volumes/MacOS2/vmac/src/SNDEMDEV.c8603863136#759"    cd /Volumes/MacOS2/vmac    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.0 -x c -arch i386 -fmessage-length=0 -pipe -Wno-trigraphs -fpascal-strings -Os -mdynamic-no-pic -Wmissing-prototypes -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.4 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/minivmac.hmap -Wall -Wstrict-prototypes -Wno-uninitialized -F/Volumes/MacOS2/vmac -I/Volumes/MacOS2/vmac/include -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources/i386 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources -c /Volumes/MacOS2/vmac/src/SNDEMDEV.c -o /Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/SNDEMDEV.o0#
+
+CCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/SONYEMDV.o /Volumes/MacOS2/vmac/src/SONYEMDV.c normal i386 c com.apple.compilers.gcc.4_0
+s338393240.675725
+e338393240.835828
+r1
+xCompileC
+xbuild/minivmac.build/Release/minivmac.build/Objects-normal/i386/SONYEMDV.o
+x/Volumes/MacOS2/vmac/src/SONYEMDV.c
+xnormal
+xi386
+xc
+xcom.apple.compilers.gcc.4_0
+lSLF07#2@43"Compile /Volumes/MacOS2/vmac/src/SONYEMDV.c338393240#338393240#0(0"0(0#0#35"/Volumes/MacOS2/vmac/src/SONYEMDV.c8606284992#759"    cd /Volumes/MacOS2/vmac    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.0 -x c -arch i386 -fmessage-length=0 -pipe -Wno-trigraphs -fpascal-strings -Os -mdynamic-no-pic -Wmissing-prototypes -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.4 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/minivmac.hmap -Wall -Wstrict-prototypes -Wno-uninitialized -F/Volumes/MacOS2/vmac -I/Volumes/MacOS2/vmac/include -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources/i386 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources -c /Volumes/MacOS2/vmac/src/SONYEMDV.c -o /Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/SONYEMDV.o0#
+
+CCompileC build/minivmac.build/Release/minivmac.build/Objects-normal/i386/VIAEMDEV.o /Volumes/MacOS2/vmac/src/VIAEMDEV.c normal i386 c com.apple.compilers.gcc.4_0
+s338393240.186550
+e338393240.390179
+r1
+xCompileC
+xbuild/minivmac.build/Release/minivmac.build/Objects-normal/i386/VIAEMDEV.o
+x/Volumes/MacOS2/vmac/src/VIAEMDEV.c
+xnormal
+xi386
+xc
+xcom.apple.compilers.gcc.4_0
+lSLF07#2@43"Compile /Volumes/MacOS2/vmac/src/VIAEMDEV.c338393240#338393240#0(0"0(0#0#35"/Volumes/MacOS2/vmac/src/VIAEMDEV.c8604506496#759"    cd /Volumes/MacOS2/vmac    setenv LANG en_US.US-ASCII    /Developer/usr/bin/gcc-4.0 -x c -arch i386 -fmessage-length=0 -pipe -Wno-trigraphs -fpascal-strings -Os -mdynamic-no-pic -Wmissing-prototypes -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.4 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/minivmac.hmap -Wall -Wstrict-prototypes -Wno-uninitialized -F/Volumes/MacOS2/vmac -I/Volumes/MacOS2/vmac/include -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources/i386 -I/Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/DerivedSources -c /Volumes/MacOS2/vmac/src/VIAEMDEV.c -o /Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/VIAEMDEV.o0#
+
+CCpResource minivmac.app/Contents/Resources/AppIcon.icns src/AppIcon.icns
+s338393238.904355
+e338393238.934320
+r1
+xCpResource
+xminivmac.app/Contents/Resources/AppIcon.icns
+xsrc/AppIcon.icns
+lSLF07#2@21"Copy src/AppIcon.icns338393238#338393238#0(0"0(0#0#37"/Volumes/MacOS2/vmac/src/AppIcon.icns8602636928#281"    cd /Volumes/MacOS2/vmac    /Developer/Library/PrivateFrameworks/DevToolsCore.framework/Resources/pbxcp -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -resolve-src-symlinks /Volumes/MacOS2/vmac/src/AppIcon.icns /Volumes/MacOS2/vmac/minivmac.app/Contents/Resources0#
+
+CCpResource minivmac.app/Contents/Resources/English.lproj/dummy.txt src/English.lproj/dummy.txt
+s338393238.905011
+e338393238.936538
+r1
+xCpResource
+xminivmac.app/Contents/Resources/English.lproj/dummy.txt
+xsrc/English.lproj/dummy.txt
+lSLF07#2@32"Copy src/English.lproj/dummy.txt338393238#338393238#0(0"0(0#0#48"/Volumes/MacOS2/vmac/src/English.lproj/dummy.txt8601250560#306"    cd /Volumes/MacOS2/vmac    /Developer/Library/PrivateFrameworks/DevToolsCore.framework/Resources/pbxcp -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -resolve-src-symlinks /Volumes/MacOS2/vmac/src/English.lproj/dummy.txt /Volumes/MacOS2/vmac/minivmac.app/Contents/Resources/English.lproj0#
+
+CLd /Volumes/MacOS2/vmac/minivmac.app/Contents/MacOS/minivmac normal i386
+s338393246.899916
+e338393247.080413
+r1
+xLd
+x/Volumes/MacOS2/vmac/minivmac.app/Contents/MacOS/minivmac
+xnormal
+xi386
+lSLF07#2@62"Link /Volumes/MacOS2/vmac/minivmac.app/Contents/MacOS/minivmac338393246#338393247#0(0"0(0#0#0"8602896832#453"    cd /Volumes/MacOS2/vmac    setenv MACOSX_DEPLOYMENT_TARGET 10.4    /Developer/usr/bin/gcc-4.0 -arch i386 -isysroot /Developer/SDKs/MacOSX10.5.sdk -L/Volumes/MacOS2/vmac -F/Volumes/MacOS2/vmac -filelist /Volumes/MacOS2/vmac/build/minivmac.build/Release/minivmac.build/Objects-normal/i386/minivmac.LinkFileList -mmacosx-version-min=10.4 -framework Carbon -framework OpenGL -framework AGL -o /Volumes/MacOS2/vmac/minivmac.app/Contents/MacOS/minivmac0#
+
+CProcessInfoPlistFile /Volumes/MacOS2/vmac/minivmac.app/Contents/Info.plist src/Info.plist
+s338393238.900689
+e338393238.904277
+r1
+xProcessInfoPlistFile
+x/Volumes/MacOS2/vmac/minivmac.app/Contents/Info.plist
+xsrc/Info.plist
+lSLF07#2@22"Process src/Info.plist338393238#338393238#0(0"0(0#0#35"/Volumes/MacOS2/vmac/src/Info.plist8603196064#230"    cd /Volumes/MacOS2/vmac    builtin-infoPlistUtility src/Info.plist -genpkginfo /Volumes/MacOS2/vmac/minivmac.app/Contents/PkgInfo -expandbuildsettings -platform macosx -o /Volumes/MacOS2/vmac/minivmac.app/Contents/Info.plist0#
+
+CStrip /Volumes/MacOS2/vmac/minivmac.app/Contents/MacOS/minivmac
+s338393247.084307
+e338393247.116642
+r1
+xStrip
+x/Volumes/MacOS2/vmac/minivmac.app/Contents/MacOS/minivmac
+lSLF07#2@42"Strip minivmac.app/Contents/MacOS/minivmac338393247#338393247#0(0"0(0#0#57"/Volumes/MacOS2/vmac/minivmac.app/Contents/MacOS/minivmac8604515200#121"    cd /Volumes/MacOS2/vmac    /Developer/usr/bin/strip -u -r /Volumes/MacOS2/vmac/minivmac.app/Contents/MacOS/minivmac0#
+
+CTouch /Volumes/MacOS2/vmac/minivmac.app
+s338393247.080538
+e338393247.084079
+r1
+xTouch
+x/Volumes/MacOS2/vmac/minivmac.app
+lSLF07#2@39"Touch /Volumes/MacOS2/vmac/minivmac.app338393247#338393247#0(0"0(0#0#0"8605836864#84"    cd /Volumes/MacOS2/vmac    /usr/bin/touch -c /Volumes/MacOS2/vmac/minivmac.app0#
+

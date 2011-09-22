@@ -153,6 +153,7 @@
 				001400000000000000000000 /* External Frameworks and Libraries */,
 				001500000000000000000000 /* Products */,
 			);
+			comments = "vMac customized version by chinlin @ Taiwan, Republic Of China 2011";
 			name = minivmac;
 			sourceTree = "<group>";
 		};

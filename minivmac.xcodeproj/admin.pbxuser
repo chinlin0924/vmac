@@ -1,5 +1,26 @@
 // !$*UTF8*$!
 {
+	000700000000000000000000 /* MYOSGLUE.c */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {649, 5005}}";
+			sepNavSelRange = "{0, 0}";
+			sepNavVisRange = "{7875, 188}";
+		};
+	};
+	000700010000000000000000 /* GLOBGLUE.c */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {677, 22646}}";
+			sepNavSelRange = "{0, 0}";
+			sepNavVisRange = "{27642, 402}";
+		};
+	};
+	000800000000000000000000 /* MYOSGLUE.h */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {1206, 4459}}";
+			sepNavSelRange = "{0, 0}";
+			sepNavVisRange = "{6878, 903}";
+		};
+	};
 	001900000000000000000000 /* minivmac */ = {
 		activeExec = 0;
 		executables = (
@@ -15,6 +36,20 @@
 			846921891418C22800801CD0 /* minivmac */,
 		);
 		perUserDictionary = {
+			PBXConfiguration.PBXFileTableDataSource3.PBXExecutablesDataSource = {
+				PBXFileTableDataSourceColumnSortingDirectionKey = "-1";
+				PBXFileTableDataSourceColumnSortingKey = PBXExecutablesDataSource_NameID;
+				PBXFileTableDataSourceColumnWidthsKey = (
+					22,
+					300,
+					229,
+				);
+				PBXFileTableDataSourceColumnsKey = (
+					PBXExecutablesDataSource_ActiveFlagID,
+					PBXExecutablesDataSource_NameID,
+					PBXExecutablesDataSource_CommentsID,
+				);
+			};
 			PBXConfiguration.PBXFileTableDataSource3.PBXFileTableDataSource = {
 				PBXFileTableDataSourceColumnSortingDirectionKey = "-1";
 				PBXFileTableDataSourceColumnSortingKey = PBXFileDataSource_Filename_ColumnID;
@@ -37,12 +72,108 @@
 					PBXFileDataSource_Target_ColumnID,
 				);
 			};
-			PBXPerProjectTemplateStateSaveDate = 338392392;
-			PBXWorkspaceStateSaveDate = 338392392;
+			PBXPerProjectTemplateStateSaveDate = 338393236;
+			PBXWorkspaceStateSaveDate = 338393236;
+		};
+		perUserProjectItems = {
+			840278A1142B7A8B005863FE /* PBXBookmark */ = 840278A1142B7A8B005863FE /* PBXBookmark */;
+			840278A4142BA228005863FE /* PBXBookmark */ = 840278A4142BA228005863FE /* PBXBookmark */;
+			840278A5142BA228005863FE /* PlistBookmark */ = 840278A5142BA228005863FE /* PlistBookmark */;
+			840278A6142BA228005863FE /* PBXTextBookmark */ = 840278A6142BA228005863FE /* PBXTextBookmark */;
+			840278A7142BA228005863FE /* PBXTextBookmark */ = 840278A7142BA228005863FE /* PBXTextBookmark */;
+			840278A8142BA228005863FE /* PBXBookmark */ = 840278A8142BA228005863FE /* PBXBookmark */;
+			840278A9142BA228005863FE /* PBXTextBookmark */ = 840278A9142BA228005863FE /* PBXTextBookmark */;
+			840278AC142BA228005863FE /* PBXTextBookmark */ = 840278AC142BA228005863FE /* PBXTextBookmark */;
+			840278AF142BA24C005863FE /* PBXTextBookmark */ = 840278AF142BA24C005863FE /* PBXTextBookmark */;
+			840278B0142BA24C005863FE /* PBXTextBookmark */ = 840278B0142BA24C005863FE /* PBXTextBookmark */;
 		};
 		sourceControlManager = 846921951418C25200801CD0 /* Source Control */;
 		userBuildSettings = {
 		};
+	};
+	840278A1142B7A8B005863FE /* PBXBookmark */ = {
+		isa = PBXBookmark;
+		fRef = 000800000000000000000000 /* MYOSGLUE.h */;
+	};
+	840278A4142BA228005863FE /* PBXBookmark */ = {
+		isa = PBXBookmark;
+		fRef = 000A00000000000000000000 /* AppIcon.icns */;
+	};
+	840278A5142BA228005863FE /* PlistBookmark */ = {
+		isa = PlistBookmark;
+		fRef = 000E00000000000000000000 /* Info.plist */;
+		fallbackIsa = PBXBookmark;
+		isK = 0;
+		kPath = (
+			CFBundleDevelopmentRegion,
+		);
+		name = /Volumes/MacOS2/vmac/src/Info.plist;
+		rLen = 0;
+		rLoc = 9223372036854775807;
+	};
+	840278A6142BA228005863FE /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = 000700000000000000000000 /* MYOSGLUE.c */;
+		name = "MYOSGLUE.c: 1";
+		rLen = 0;
+		rLoc = 0;
+		rType = 0;
+		vrLen = 188;
+		vrLoc = 7875;
+	};
+	840278A7142BA228005863FE /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = 000700010000000000000000 /* GLOBGLUE.c */;
+		name = "GLOBGLUE.c: 1";
+		rLen = 0;
+		rLoc = 0;
+		rType = 0;
+		vrLen = 402;
+		vrLoc = 27642;
+	};
+	840278A8142BA228005863FE /* PBXBookmark */ = {
+		isa = PBXBookmark;
+		fRef = 000800000000000000000000 /* MYOSGLUE.h */;
+	};
+	840278A9142BA228005863FE /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = 000800000000000000000000 /* MYOSGLUE.h */;
+		name = "MYOSGLUE.h: 1";
+		rLen = 0;
+		rLoc = 0;
+		rType = 0;
+		vrLen = 593;
+		vrLoc = 0;
+	};
+	840278AC142BA228005863FE /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = 000800000000000000000000 /* MYOSGLUE.h */;
+		name = "MYOSGLUE.h: 1";
+		rLen = 0;
+		rLoc = 0;
+		rType = 0;
+		vrLen = 903;
+		vrLoc = 6878;
+	};
+	840278AF142BA24C005863FE /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = 000800000000000000000000 /* MYOSGLUE.h */;
+		name = "MYOSGLUE.h: 1";
+		rLen = 0;
+		rLoc = 0;
+		rType = 0;
+		vrLen = 593;
+		vrLoc = 0;
+	};
+	840278B0142BA24C005863FE /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = 000800000000000000000000 /* MYOSGLUE.h */;
+		name = "MYOSGLUE.h: 1";
+		rLen = 0;
+		rLoc = 0;
+		rType = 0;
+		vrLen = 903;
+		vrLoc = 6878;
 	};
 	846921891418C22800801CD0 /* minivmac */ = {
 		isa = PBXExecutable;
