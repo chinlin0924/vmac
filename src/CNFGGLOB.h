@@ -19,7 +19,7 @@
 
 /* capabilities provided by platform specific code */
 
-#define MySoundEnabled 1
+#define MySoundEnabled 0
 
 #define MySoundRecenterSilence 0
 #define kLn2SoundSampSz 3
@@ -30,21 +30,21 @@
 
 #define NumDrives 6
 #define IncludeSonyRawMode 1
-#define IncludeSonyGetName 1
-#define IncludeSonyNew 1
-#define IncludeSonyNameNew 1
+#define IncludeSonyGetName 0
+#define IncludeSonyNew 0
+#define IncludeSonyNameNew 0
 
 #define vMacScreenHeight 342
 #define vMacScreenWidth 512
 #define vMacScreenDepth 0
 
-#define kTrueROM_Size 0x040000
+#define kTrueROM_Size 0x020000
 #define kROM_Size kTrueROM_Size
 
-#define IncludePbufs 1
+#define IncludePbufs 0
 #define NumPbufs 4
 
-#define EnableMouseMotion 1
+#define EnableMouseMotion 0
 
-#define IncludeHostTextClipExchange 1
+#define IncludeHostTextClipExchange 0
 #define WantInitSpeedValue 3

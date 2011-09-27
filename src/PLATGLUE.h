@@ -1,7 +1,7 @@
 /*
 	PLATGLUE.h
 
-	Copyright (C) 2007 Philip Cummins, Richard F. Bannister, Paul C. Pratt
+	Copyright (C) 2008 Paul C. Pratt
 
 	You can redistribute this file and/or modify it under the terms
 	of version 2 of the GNU General Public License as published by
@@ -15,21 +15,11 @@
 */
 
 /*
-	PLATform GLUE. (for Macintosh OS X)
+	PLATform GLUE. (for GTK)
 
 	All operating system dependent code for the
-	Macintosh platform should go here.
-
-	This code is descended from Richard F. Bannister's Macintosh
-	port of vMac, by Philip Cummins.
-
-	The main entry point 'main' is at the end of this file.
+	GIMP Toolkit should go here.
 */
-
-/* if UsingCarbonLib, instead of native Macho, then some APIs are missing */
-#ifndef UsingCarbonLib
-#define UsingCarbonLib 0
-#endif
 
 /*--- some simple utilities ---*/
 
@@ -38,2372 +28,63 @@ GLOBALPROC MyMoveBytes(anyp srcPtr, anyp destPtr, si5b byteCount)
 	(void) memcpy((char *)destPtr, (char *)srcPtr, byteCount);
 }
 
-LOCALPROC PStrFromChar(ps3p r, char x)
-{
-	r[0] = 1;
-	r[1] = (char)x;
-}
-
 /*--- control mode and internationalization ---*/
 
-#define NeedCell2UnicodeMap 1
+#define NeedCell2PlainAsciiMap 1
 
 #include "CONTROLM.h"
 
-/*--- information about the environment ---*/
+/*--- debug settings and utilities ---*/
 
-LOCALVAR CFBundleRef AppServBunRef;
+#define MyDbgOut 0
+#define MyDbgEvents (1 && MyDbgOut)
 
-LOCALVAR blnr DidApplicationServicesBun = falseblnr;
-
-LOCALFUNC blnr HaveApplicationServicesBun(void)
-{
-	if (! DidApplicationServicesBun) {
-		AppServBunRef = CFBundleGetBundleWithIdentifier(
-			CFSTR("com.apple.ApplicationServices"));
-		DidApplicationServicesBun = trueblnr;
-	}
-	return (AppServBunRef != NULL);
-}
-
-LOCALVAR CFBundleRef HIToolboxBunRef;
-
-LOCALVAR blnr DidHIToolboxBunRef = falseblnr;
-
-LOCALFUNC blnr HaveHIToolboxBunRef(void)
-{
-	if (! DidHIToolboxBunRef) {
-		HIToolboxBunRef = CFBundleGetBundleWithIdentifier(
-			CFSTR("com.apple.HIToolbox"));
-		DidHIToolboxBunRef = trueblnr;
-	}
-	return (HIToolboxBunRef != NULL);
-}
-
-LOCALVAR CFBundleRef AGLBunRef;
-
-LOCALVAR blnr DidAGLBunRef = falseblnr;
-
-LOCALFUNC blnr HaveAGLBunRef(void)
-{
-	if (! DidAGLBunRef) {
-		AGLBunRef = CFBundleGetBundleWithIdentifier(
-			CFSTR("com.apple.agl"));
-		DidAGLBunRef = trueblnr;
-	}
-	return (AGLBunRef != NULL);
-}
-
-
-/* SetSystemUIModeProcPtr API always not available */
-
-typedef UInt32                          MySystemUIMode;
-typedef OptionBits                      MySystemUIOptions;
-
-enum {
-	MykUIModeNormal                 = 0,
-	MykUIModeAllHidden              = 3
-};
-
-enum {
-	MykUIOptionAutoShowMenuBar      = 1 << 0,
-	MykUIOptionDisableAppleMenu     = 1 << 2,
-	MykUIOptionDisableProcessSwitch = 1 << 3,
-	MykUIOptionDisableForceQuit     = 1 << 4,
-	MykUIOptionDisableSessionTerminate = 1 << 5,
-	MykUIOptionDisableHide          = 1 << 6
-};
-
-typedef OSStatus (*SetSystemUIModeProcPtr)
-	(MySystemUIMode inMode, MySystemUIOptions inOptions);
-LOCALVAR SetSystemUIModeProcPtr MySetSystemUIMode = NULL;
-LOCALVAR blnr DidSetSystemUIMode = falseblnr;
-
-LOCALFUNC blnr HaveMySetSystemUIMode(void)
-{
-	if (! DidSetSystemUIMode) {
-		if (HaveHIToolboxBunRef()) {
-			MySetSystemUIMode =
-				(SetSystemUIModeProcPtr)
-				CFBundleGetFunctionPointerForName(
-					HIToolboxBunRef, CFSTR("SetSystemUIMode"));
-		}
-		DidSetSystemUIMode = trueblnr;
-	}
-	return (MySetSystemUIMode != NULL);
-}
-
-/* In 10.1 or later */
-
-typedef OSStatus (*LSCopyDisplayNameForRefProcPtr)
-	(const FSRef *inRef, CFStringRef *outDisplayName);
-LOCALVAR LSCopyDisplayNameForRefProcPtr MyLSCopyDisplayNameForRef = NULL;
-LOCALVAR blnr DidLSCopyDisplayNameForRef = falseblnr;
-
-LOCALFUNC blnr HaveMyLSCopyDisplayNameForRef(void)
-{
-	if (! DidLSCopyDisplayNameForRef) {
-		if (HaveApplicationServicesBun()) {
-			MyLSCopyDisplayNameForRef =
-				(LSCopyDisplayNameForRefProcPtr)
-				CFBundleGetFunctionPointerForName(
-					AppServBunRef, CFSTR("LSCopyDisplayNameForRef"));
-		}
-		DidLSCopyDisplayNameForRef = trueblnr;
-	}
-	return (MyLSCopyDisplayNameForRef != NULL);
-}
-
-/* In 10.5 or later */
-
-typedef GLboolean (*aglSetWindowRefProcPtr)
-	(AGLContext ctx, WindowRef window);
-LOCALVAR aglSetWindowRefProcPtr MyaglSetWindowRef = NULL;
-LOCALVAR blnr DidaglSetWindowRef = falseblnr;
-
-LOCALFUNC blnr HaveMyaglSetWindowRef(void)
-{
-	if (! DidaglSetWindowRef) {
-		if (HaveAGLBunRef()) {
-			MyaglSetWindowRef =
-				(aglSetWindowRefProcPtr)
-				CFBundleGetFunctionPointerForName(
-					AGLBunRef, CFSTR("aglSetWindowRef"));
-		}
-		DidaglSetWindowRef = trueblnr;
-	}
-	return (MyaglSetWindowRef != NULL);
-}
-
-/* Deprecated as of 10.5 */
-
-typedef CGrafPtr My_AGLDrawable;
-typedef GLboolean (*aglSetDrawableProcPtr)
-	(AGLContext ctx, My_AGLDrawable draw);
-LOCALVAR aglSetDrawableProcPtr MyaglSetDrawable = NULL;
-LOCALVAR blnr DidaglSetDrawable = falseblnr;
-
-LOCALFUNC blnr HaveMyaglSetDrawable(void)
-{
-	if (! DidaglSetDrawable) {
-		if (HaveAGLBunRef()) {
-			MyaglSetDrawable =
-				(aglSetDrawableProcPtr)
-				CFBundleGetFunctionPointerForName(
-					AGLBunRef, CFSTR("aglSetDrawable"));
-		}
-		DidaglSetDrawable = trueblnr;
-	}
-	return (MyaglSetDrawable != NULL);
-}
-
-/* routines not in carbon lib */
-
-
-#if UsingCarbonLib
-
-typedef CGDisplayErr
-(*CGGetActiveDisplayListProcPtr) (
-	CGDisplayCount       maxDisplays,
-	CGDirectDisplayID *  activeDspys,
-	CGDisplayCount *     dspyCnt);
-LOCALVAR CGGetActiveDisplayListProcPtr MyCGGetActiveDisplayList = NULL;
-LOCALVAR blnr DidCGGetActiveDisplayList = falseblnr;
-
-LOCALFUNC blnr HaveMyCGGetActiveDisplayList(void)
-{
-	if (! DidCGGetActiveDisplayList) {
-		if (HaveApplicationServicesBun()) {
-			MyCGGetActiveDisplayList =
-				(CGGetActiveDisplayListProcPtr)
-				CFBundleGetFunctionPointerForName(
-					AppServBunRef, CFSTR("CGGetActiveDisplayList"));
-		}
-		DidCGGetActiveDisplayList = trueblnr;
-	}
-	return (MyCGGetActiveDisplayList != NULL);
-}
-
+#if ! MyDbgOut
+#define WriteExtraErr(s)
 #else
-
-#define HaveMyCGGetActiveDisplayList() trueblnr
-#define MyCGGetActiveDisplayList CGGetActiveDisplayList
-
-#endif /* ! UsingCarbonLib */
-
-
-#if UsingCarbonLib
-
-typedef CGRect
-(*CGDisplayBoundsProcPtr) (CGDirectDisplayID display);
-LOCALVAR CGDisplayBoundsProcPtr MyCGDisplayBounds = NULL;
-LOCALVAR blnr DidCGDisplayBounds = falseblnr;
-
-LOCALFUNC blnr HaveMyCGDisplayBounds(void)
-{
-	if (! DidCGDisplayBounds) {
-		if (HaveApplicationServicesBun()) {
-			MyCGDisplayBounds =
-				(CGDisplayBoundsProcPtr)
-				CFBundleGetFunctionPointerForName(
-					AppServBunRef, CFSTR("CGDisplayBounds"));
-		}
-		DidCGDisplayBounds = trueblnr;
-	}
-	return (MyCGDisplayBounds != NULL);
-}
-
-#else
-
-#define HaveMyCGDisplayBounds() trueblnr
-#define MyCGDisplayBounds CGDisplayBounds
-
-#endif /* ! UsingCarbonLib */
-
-
-#if UsingCarbonLib
-
-typedef size_t
-(*CGDisplayPixelsWideProcPtr) (CGDirectDisplayID display);
-LOCALVAR CGDisplayPixelsWideProcPtr MyCGDisplayPixelsWide = NULL;
-LOCALVAR blnr DidCGDisplayPixelsWide = falseblnr;
-
-LOCALFUNC blnr HaveMyCGDisplayPixelsWide(void)
-{
-	if (! DidCGDisplayPixelsWide) {
-		if (HaveApplicationServicesBun()) {
-			MyCGDisplayPixelsWide =
-				(CGDisplayPixelsWideProcPtr)
-				CFBundleGetFunctionPointerForName(
-					AppServBunRef, CFSTR("CGDisplayPixelsWide"));
-		}
-		DidCGDisplayPixelsWide = trueblnr;
-	}
-	return (MyCGDisplayPixelsWide != NULL);
-}
-
-#else
-
-#define HaveMyCGDisplayPixelsWide() trueblnr
-#define MyCGDisplayPixelsWide CGDisplayPixelsWide
-
-#endif /* ! UsingCarbonLib */
-
-
-#if UsingCarbonLib
-
-typedef size_t
-(*CGDisplayPixelsHighProcPtr) (CGDirectDisplayID display);
-LOCALVAR CGDisplayPixelsHighProcPtr MyCGDisplayPixelsHigh = NULL;
-LOCALVAR blnr DidCGDisplayPixelsHigh = falseblnr;
-
-LOCALFUNC blnr HaveMyCGDisplayPixelsHigh(void)
-{
-	if (! DidCGDisplayPixelsHigh) {
-		if (HaveApplicationServicesBun()) {
-			MyCGDisplayPixelsHigh =
-				(CGDisplayPixelsHighProcPtr)
-				CFBundleGetFunctionPointerForName(
-					AppServBunRef, CFSTR("CGDisplayPixelsHigh"));
-		}
-		DidCGDisplayPixelsHigh = trueblnr;
-	}
-	return (MyCGDisplayPixelsHigh != NULL);
-}
-
-#else
-
-#define HaveMyCGDisplayPixelsHigh() trueblnr
-#define MyCGDisplayPixelsHigh CGDisplayPixelsHigh
-
-#endif /* ! UsingCarbonLib */
-
-
-#if UsingCarbonLib
-
-typedef CGDisplayErr
-(*CGDisplayHideCursorProcPtr) (CGDirectDisplayID display);
-LOCALVAR CGDisplayHideCursorProcPtr MyCGDisplayHideCursor = NULL;
-LOCALVAR blnr DidCGDisplayHideCursor = falseblnr;
-
-LOCALFUNC blnr HaveMyCGDisplayHideCursor(void)
-{
-	if (! DidCGDisplayHideCursor) {
-		if (HaveApplicationServicesBun()) {
-			MyCGDisplayHideCursor =
-				(CGDisplayHideCursorProcPtr)
-				CFBundleGetFunctionPointerForName(
-					AppServBunRef, CFSTR("CGDisplayHideCursor"));
-		}
-		DidCGDisplayHideCursor = trueblnr;
-	}
-	return (MyCGDisplayHideCursor != NULL);
-}
-
-#else
-
-#define HaveMyCGDisplayHideCursor() trueblnr
-#define MyCGDisplayHideCursor CGDisplayHideCursor
-
-#endif /* ! UsingCarbonLib */
-
-
-#if UsingCarbonLib
-
-typedef CGDisplayErr
-(*CGDisplayShowCursorProcPtr) (CGDirectDisplayID display);
-LOCALVAR CGDisplayShowCursorProcPtr MyCGDisplayShowCursor = NULL;
-LOCALVAR blnr DidCGDisplayShowCursor = falseblnr;
-
-LOCALFUNC blnr HaveMyCGDisplayShowCursor(void)
-{
-	if (! DidCGDisplayShowCursor) {
-		if (HaveApplicationServicesBun()) {
-			MyCGDisplayShowCursor =
-				(CGDisplayShowCursorProcPtr)
-				CFBundleGetFunctionPointerForName(
-					AppServBunRef, CFSTR("CGDisplayShowCursor"));
-		}
-		DidCGDisplayShowCursor = trueblnr;
-	}
-	return (MyCGDisplayShowCursor != NULL);
-}
-
-#else
-
-#define HaveMyCGDisplayShowCursor() trueblnr
-#define MyCGDisplayShowCursor CGDisplayShowCursor
-
-#endif /* ! UsingCarbonLib */
-
-
-#if UsingCarbonLib
-
-typedef CGEventErr
-(*CGWarpMouseCursorPositionProcPtr) (CGPoint newCursorPosition);
-LOCALVAR CGWarpMouseCursorPositionProcPtr MyCGWarpMouseCursorPosition = NULL;
-LOCALVAR blnr DidCGWarpMouseCursorPosition = falseblnr;
-
-LOCALFUNC blnr HaveMyCGWarpMouseCursorPosition(void)
-{
-	if (! DidCGWarpMouseCursorPosition) {
-		if (HaveApplicationServicesBun()) {
-			MyCGWarpMouseCursorPosition =
-				(CGWarpMouseCursorPositionProcPtr)
-				CFBundleGetFunctionPointerForName(
-					AppServBunRef, CFSTR("CGWarpMouseCursorPosition"));
-		}
-		DidCGWarpMouseCursorPosition = trueblnr;
-	}
-	return (MyCGWarpMouseCursorPosition != NULL);
-}
-
-#else
-
-#define HaveMyCGWarpMouseCursorPosition() trueblnr
-#define MyCGWarpMouseCursorPosition CGWarpMouseCursorPosition
-
-#endif /* ! UsingCarbonLib */
-
-
-#if UsingCarbonLib
-
-typedef CGEventErr
-(*CGSetLocalEventsSuppressionIntervalProcPtr) (CFTimeInterval seconds);
-LOCALVAR CGSetLocalEventsSuppressionIntervalProcPtr MyCGSetLocalEventsSuppressionInterval = NULL;
-LOCALVAR blnr DidCGSetLocalEventsSuppressionInterval = falseblnr;
-
-LOCALFUNC blnr HaveMyCGSetLocalEventsSuppressionInterval(void)
-{
-	if (! DidCGSetLocalEventsSuppressionInterval) {
-		if (HaveApplicationServicesBun()) {
-			MyCGSetLocalEventsSuppressionInterval =
-				(CGSetLocalEventsSuppressionIntervalProcPtr)
-				CFBundleGetFunctionPointerForName(
-					AppServBunRef, CFSTR("CGSetLocalEventsSuppressionInterval"));
-		}
-		DidCGSetLocalEventsSuppressionInterval = trueblnr;
-	}
-	return (MyCGSetLocalEventsSuppressionInterval != NULL);
-}
-
-#else
-
-#define HaveMyCGSetLocalEventsSuppressionInterval() trueblnr
-#define MyCGSetLocalEventsSuppressionInterval CGSetLocalEventsSuppressionInterval
-
-#endif /* ! UsingCarbonLib */
-
-
-#if UsingCarbonLib
-
-typedef OSStatus (*CreateStandardAlertProcPtr) (
-	AlertType alertType,
-	CFStringRef error,
-	CFStringRef explanation,
-	const AlertStdCFStringAlertParamRec * param,
-	DialogRef * outAlert
-);
-LOCALVAR CreateStandardAlertProcPtr MyCreateStandardAlert = NULL;
-LOCALVAR blnr DidCreateStandardAlert = falseblnr;
-
-LOCALFUNC blnr HaveMyCreateStandardAlert(void)
-{
-	if (! DidCreateStandardAlert) {
-		if (HaveHIToolboxBunRef()) {
-			MyCreateStandardAlert =
-				(CreateStandardAlertProcPtr)
-				CFBundleGetFunctionPointerForName(
-					HIToolboxBunRef, CFSTR("CreateStandardAlert"));
-		}
-		DidCreateStandardAlert = trueblnr;
-	}
-	return (MyCreateStandardAlert != NULL);
-}
-
-#else
-
-#define HaveMyCreateStandardAlert() trueblnr
-#define MyCreateStandardAlert CreateStandardAlert
-
-#endif /* ! UsingCarbonLib */
-
-
-#if UsingCarbonLib
-
-typedef OSStatus (*RunStandardAlertProcPtr) (
-	DialogRef inAlert,
-	ModalFilterUPP filterProc,
-	DialogItemIndex * outItemHit
-);
-LOCALVAR RunStandardAlertProcPtr MyRunStandardAlert = NULL;
-LOCALVAR blnr DidRunStandardAlert = falseblnr;
-
-LOCALFUNC blnr HaveMyRunStandardAlert(void)
-{
-	if (! DidRunStandardAlert) {
-		if (HaveHIToolboxBunRef()) {
-			MyRunStandardAlert =
-				(RunStandardAlertProcPtr)
-				CFBundleGetFunctionPointerForName(
-					HIToolboxBunRef, CFSTR("RunStandardAlert"));
-		}
-		DidRunStandardAlert = trueblnr;
-	}
-	return (MyRunStandardAlert != NULL);
-}
-
-#else
-
-#define HaveMyRunStandardAlert() trueblnr
-#define MyRunStandardAlert RunStandardAlert
-
-#endif /* ! UsingCarbonLib */
-
-
-/*--- display utilities ---*/
-
-/* DoForEachDisplay adapted from Apple Technical Q&A QA1168 */
-
-typedef void
-(*ForEachDisplayProcPtr) (CGDirectDisplayID display);
-
-LOCALPROC DoForEachDisplay0(CGDisplayCount dspCount,
-	CGDirectDisplayID *displays, ForEachDisplayProcPtr p)
-{
-	int i;
-
-	if (noErr == MyCGGetActiveDisplayList(dspCount,
-		displays, &dspCount))
-	{
-		for (i = 0; i < dspCount; ++i) {
-			p(displays[i]);
-		}
-	}
-}
-
-LOCALPROC DoForEachDisplay(ForEachDisplayProcPtr p)
-{
-	CGDisplayCount dspCount = 0;
-
-	if (HaveMyCGGetActiveDisplayList()
-		&& (noErr == MyCGGetActiveDisplayList(0, NULL, &dspCount)))
-	{
-		if (dspCount <= 2) {
-			CGDirectDisplayID displays[2];
-			DoForEachDisplay0(dspCount, displays, p);
-		} else {
-			CGDirectDisplayID *displays =
-				calloc((size_t)dspCount, sizeof(CGDirectDisplayID));
-			if (NULL != displays) {
-				DoForEachDisplay0(dspCount, displays, p);
-				free(displays);
-			}
-		}
-	}
-}
-
-LOCALVAR void *datp;
-
-typedef CGDirectDisplayID (*CGMainDisplayIDProcPtr)(void);
-
-LOCALVAR CGMainDisplayIDProcPtr MyCGMainDisplayID = NULL;
-LOCALVAR blnr DidCGMainDisplayID = falseblnr;
-
-LOCALFUNC blnr HaveMyCGMainDisplayID(void)
-{
-	if (! DidCGMainDisplayID) {
-		if (HaveApplicationServicesBun()) {
-			MyCGMainDisplayID =
-				(CGMainDisplayIDProcPtr)
-				CFBundleGetFunctionPointerForName(
-					AppServBunRef, CFSTR("CGMainDisplayID"));
-		}
-		DidCGMainDisplayID = trueblnr;
-	}
-	return (MyCGMainDisplayID != NULL);
-}
-
-#ifndef kCGNullDirectDisplay /* not in MPW Headers */
-#define kCGNullDirectDisplay ((CGDirectDisplayID)0)
-#endif
-
-LOCALPROC MyMainDisplayIDProc(CGDirectDisplayID display)
-{
-	CGDirectDisplayID *p = (CGDirectDisplayID *)datp;
-
-	if (kCGNullDirectDisplay == *p) {
-		*p = display;
-	}
-}
-
-LOCALFUNC CGDirectDisplayID MyMainDisplayID(void)
-{
-	if (HaveMyCGMainDisplayID()) {
-		return MyCGMainDisplayID();
-	} else {
-		/* for before OS X 10.2 */
-		CGDirectDisplayID r = kCGNullDirectDisplay;
-		void *savedatp = datp;
-		datp = (void *)&r;
-		DoForEachDisplay(MyMainDisplayIDProc);
-		datp = savedatp;
-		return r;
-	}
-}
-
-/*--- utilities for adapting to the environment ---*/
-
-LOCALPROC MyGetScreenBitsBounds(Rect *r)
-{
-	if (HaveMyCGDisplayBounds()) {
-		CGRect cgr = MyCGDisplayBounds(MyMainDisplayID());
-
-		r->left = cgr.origin.x;
-		r->top = cgr.origin.y;
-		r->right = cgr.origin.x + cgr.size.width;
-		r->bottom = cgr.origin.y + cgr.size.height;
-	}
-}
-
-LOCALPROC InvalWholeWindow(WindowRef mw)
-{
-	Rect bounds;
-
-	GetWindowPortBounds(mw, &bounds);
-	InvalWindowRect(mw, &bounds);
-}
-
-LOCALPROC MySetMacWindContRect(WindowRef mw, Rect *r)
-{
-	(void) SetWindowBounds (mw, kWindowContentRgn, r);
-	InvalWholeWindow(mw);
-}
-
-LOCALFUNC blnr MyGetWindowTitleBounds(WindowRef mw, Rect *r)
-{
-	return (noErr == GetWindowBounds(mw, kWindowTitleBarRgn, r));
-}
-
-LOCALFUNC blnr MyGetWindowContBounds(WindowRef mw, Rect *r)
-{
-	return (noErr == GetWindowBounds(mw, kWindowContentRgn, r));
-}
-
-LOCALPROC MyGetGrayRgnBounds(Rect *r)
-{
-	GetRegionBounds(GetGrayRgn(), (Rect *)r);
-}
-
-/*--- sending debugging info to file ---*/
-
-#if MakeDumpFile
-
-#include <stdio.h>
-
-EXPORTVAR(FILE, *DumpFile)
-GLOBALVAR FILE *DumpFile = NULL;
-
-LOCALFUNC blnr StartDump(void)
-{
-	DumpFile = fopen("DumpFile", "w");
-	if (NULL == DumpFile) {
-		return falseblnr;
-	} else {
-		fprintf(DumpFile, "Dump File\n");
-		return trueblnr;
-	}
-}
-
-LOCALPROC EndDump(void)
-{
-	if (DumpFile != NULL) {
-		fclose(DumpFile);
-	}
-}
-
-GLOBALPROC DumpACStr(char *s)
-{
-	fprintf(DumpFile, "%s", s);
-}
-
-GLOBALPROC DumpANewLine(void)
-{
-	fprintf(DumpFile, "\n");
-}
-
-GLOBALPROC DumpAHex(ui5r x)
-{
-	fprintf(DumpFile, "%X", (int)x);
-}
-
-GLOBALPROC DumpANum(ui5r x)
-{
-	fprintf(DumpFile, "%d", (int)x);
-}
-
-#endif
-
-/*--- main window data ---*/
-
-LOCALVAR WindowPtr gMyMainWindow = NULL;
-
-#if EnableFullScreen
-LOCALVAR short hOffset;
-LOCALVAR short vOffset;
-#endif
-
-#if EnableFullScreen
-LOCALVAR blnr GrabMachine = falseblnr;
-#endif
-
-#if EnableFullScreen
-LOCALVAR blnr UseFullScreen = falseblnr;
-#endif
-
-#if EnableMagnify
-LOCALVAR blnr UseMagnify = falseblnr;
-#endif
-
-#ifndef MyWindowScale
-#define MyWindowScale 2
-#endif
-
-#if EnableMagnify
-LOCALPROC MyScaleRect(Rect *r)
-{
-	r->left *= MyWindowScale;
-	r->right *= MyWindowScale;
-	r->top *= MyWindowScale;
-	r->bottom *= MyWindowScale;
-}
-#endif
-
-LOCALPROC SetScrnRectFromCoords(Rect *r, si4b top, si4b left, si4b bottom, si4b right)
-{
-	r->left = left;
-	r->right = right;
-	r->top = top;
-	r->bottom = bottom;
-#if EnableMagnify
-	if (UseMagnify) {
-		MyScaleRect(r);
-	}
-#endif
-#if EnableFullScreen
-	if (UseFullScreen) {
-		OffsetRect(r, hOffset, vOffset);
-	}
-#endif
-}
-
-#if EnableMagnify
-#define MyScaledHeight (MyWindowScale * vMacScreenHeight)
-#define MyScaledWidth (MyWindowScale * vMacScreenWidth)
-#endif
-
-#define EnableScalingBuff 1
-
-#if EnableScalingBuff
-LOCALVAR char *ScalingBuff = nullpr;
-#endif
-
-#if 0 /* some experiments */
-LOCALVAR CGrafPtr GrabbedPort = NULL;
-#endif
-
-#if 0
-LOCALPROC AdjustMainScreenGrab(void)
-{
-	if (GrabMachine) {
-		if (NULL == GrabbedPort) {
-			/* CGDisplayCapture(MyMainDisplayID()); */
-			CGCaptureAllDisplays();
-			/* CGDisplayHideCursor( MyMainDisplayID() ); */
-			GrabbedPort = CreateNewPortForCGDisplayID((UInt32)MyMainDisplayID());
-			LockPortBits (GrabbedPort);
-		}
-	} else {
-		if (GrabbedPort != NULL) {
-			UnlockPortBits (GrabbedPort);
-			/* CGDisplayShowCursor( MyMainDisplayID() ); */
-			/* CGDisplayRelease(MyMainDisplayID()); */
-			CGReleaseAllDisplays();
-			GrabbedPort = NULL;
-		}
-	}
-}
-#endif
-
-#if 0
-typedef CGDisplayErr (*CGReleaseAllDisplaysProcPtr)
-	(void);
-
-LOCALPROC MyReleaseAllDisplays(void)
-{
-	if (HaveApplicationServicesBun()) {
-		CGReleaseAllDisplaysProcPtr ReleaseAllDisplaysProc =
-			(CGReleaseAllDisplaysProcPtr)
-			CFBundleGetFunctionPointerForName(
-				AppServBunRef, CFSTR("CGReleaseAllDisplays"));
-		if (ReleaseAllDisplaysProc != NULL) {
-			ReleaseAllDisplaysProc();
-		}
-	}
-}
-
-typedef CGDisplayErr (*CGCaptureAllDisplaysProcPtr)
-	(void);
-
-LOCALPROC MyCaptureAllDisplays(void)
-{
-	if (HaveApplicationServicesBun()) {
-		CGCaptureAllDisplaysProcPtr CaptureAllDisplaysProc =
-			(CGCaptureAllDisplaysProcPtr)
-			CFBundleGetFunctionPointerForName(
-				AppServBunRef, CFSTR("CGCaptureAllDisplays"));
-		if (CaptureAllDisplaysProc != NULL) {
-			CaptureAllDisplaysProc();
-		}
-	}
-}
-#endif
-
-LOCALPROC UpdateLuminanceCopy(si4b top, si4b left, si4b bottom, si4b right)
-{
-	int i;
-	int j;
-	ui5b t0;
-
-
-	UnusedParam(left);
-	UnusedParam(right);
-#if 0 != vMacScreenDepth
-	if (UseColorMode) {
-#if vMacScreenDepth < 4
-		ui5b CLUT_final[CLUT_size];
-#endif
-		ui3b *p1 = (ui3b *)GetCurDrawBuff() + (ui5r)vMacScreenByteWidth * top;
-		ui5b *p2 = (ui5b *)ScalingBuff + (ui5r)vMacScreenWidth * top;
-
-#if vMacScreenDepth < 4
-		for (i = 0; i < CLUT_size; ++i) {
-			CLUT_final[i] = (((long)CLUT_reds[i] & 0xFF00) << 16)
-				| (((long)CLUT_greens[i] & 0xFF00) << 8)
-				| ((long)CLUT_blues[i] & 0xFF00);
-		}
-#endif
-
-		for (i = bottom - top; --i >= 0; ) {
-#if 4 == vMacScreenDepth
-			for (j = vMacScreenWidth; --j >= 0; ) {
-				t0 = do_get_mem_word(p1);
-				p1 += 2;
-				*p2++ =
-					((t0 & 0x7C00) << 17) |
-					((t0 & 0x7000) << 12) |
-					((t0 & 0x03E0) << 14) |
-					((t0 & 0x0380) << 9) |
-					((t0 & 0x001F) << 11) |
-					((t0 & 0x001C) << 6);
-#if 0
-					((t0 & 0x7C00) << 9) |
-					((t0 & 0x7000) << 4) |
-					((t0 & 0x03E0) << 6) |
-					((t0 & 0x0380) << 1) |
-					((t0 & 0x001F) << 3) |
-					((t0 & 0x001C) >> 2);
-#endif
-			}
-#elif 5 == vMacScreenDepth
-			for (j = vMacScreenWidth; --j >= 0; ) {
-				t0 = do_get_mem_long(p1);
-				p1 += 4;
-				*p2++ = t0 << 8;
-			}
-#else
-			for (j = vMacScreenByteWidth; --j >= 0; ) {
-				t0 = *p1++;
-#if 1 == vMacScreenDepth
-				*p2++ = CLUT_final[t0 >> 6];
-				*p2++ = CLUT_final[(t0 >> 4) & 0x03];
-				*p2++ = CLUT_final[(t0 >> 2) & 0x03];
-				*p2++ = CLUT_final[t0 & 0x03];
-#elif 2 == vMacScreenDepth
-				*p2++ = CLUT_final[t0 >> 4];
-				*p2++ = CLUT_final[t0 & 0x0F];
-#elif 3 == vMacScreenDepth
-				*p2++ = CLUT_final[t0];
-#endif
-			}
-#endif
-		}
-	} else
-#endif
-	{
-		int k;
-		ui3b *p1 = (ui3b *)GetCurDrawBuff() + (ui5r)vMacScreenMonoByteWidth * top;
-		ui3b *p2 = (ui3b *)ScalingBuff + (ui5r)vMacScreenWidth * top;
-
-		for (i = bottom - top; --i >= 0; ) {
-			for (j = vMacScreenMonoByteWidth; --j >= 0; ) {
-				t0 = *p1++;
-				for (k = 8; --k >= 0; ) {
-					*p2++ = ((t0 >> k) & 0x01) - 1;
-				}
-			}
-		}
-	}
-}
-
-LOCALVAR AGLContext ctx = NULL;
-LOCALVAR short GLhOffset;
-LOCALVAR short GLvOffset;
-
-#ifndef UseAGLdoublebuff
-#define UseAGLdoublebuff 0
-#endif
-
-LOCALPROC MyDrawWithOpenGL(si4b top, si4b left, si4b bottom, si4b right)
-{
-	if (GL_TRUE != aglSetCurrentContext(ctx)) {
-		/* err = aglReportError() */
-	} else {
-#if 0
-		glClear(GL_COLOR_BUFFER_BIT);
-		glBitmap(vMacScreenWidth,
-			vMacScreenHeight,
-			0,
-			0,
-			0,
-			0,
-			(const GLubyte *)GetCurDrawBuff());
-#endif
-#if 1
-		UpdateLuminanceCopy(top, left, bottom, right);
-		{
-#if UseAGLdoublebuff
-			glRasterPos2i(GLhOffset, GLvOffset);
-#if 0 != vMacScreenDepth
-			if (UseColorMode) {
-				glDrawPixels(vMacScreenWidth,
-					vMacScreenHeight,
-					GL_RGBA,
-					GL_UNSIGNED_INT_8_8_8_8,
-					ScalingBuff);
-			} else
-#endif
-			{
-				glDrawPixels(vMacScreenWidth,
-					vMacScreenHeight,
-					GL_LUMINANCE,
-					GL_UNSIGNED_BYTE,
-					ScalingBuff);
-			}
-#else
-			si4b top2 = top;
-			si4b left2 = left;
-
-#if EnableMagnify
-			if (UseMagnify) {
-				top2 *= MyWindowScale;
-				left2 *= MyWindowScale;
-			}
-#endif
-			glRasterPos2i(GLhOffset + left2, GLvOffset - top2);
-#if 0 != vMacScreenDepth
-			if (UseColorMode) {
-				glDrawPixels(vMacScreenWidth,
-					bottom - top,
-					GL_RGBA,
-					GL_UNSIGNED_INT_8_8_8_8,
-					ScalingBuff + top * vMacScreenWidth * 4
-					);
-			} else
-#endif
-			{
-				glDrawPixels(vMacScreenWidth,
-					bottom - top,
-					GL_LUMINANCE,
-					GL_UNSIGNED_BYTE,
-					ScalingBuff + top * vMacScreenWidth);
-			}
-#endif
-		}
-#endif
-#if UseAGLdoublebuff
-		aglSwapBuffers(ctx);
-#else
-		glFlush();
-#endif
-	}
-}
-
-LOCALPROC Update_Screen(void)
-{
-	if (ctx != NULL) {
-		MyDrawWithOpenGL(0, 0, vMacScreenHeight, vMacScreenWidth);
-	}
-}
-
-LOCALPROC HaveChangedScreenBuff(si4b top, si4b left, si4b bottom, si4b right)
-{
-	if (ctx != NULL) {
-		MyDrawWithOpenGL(top, left, bottom, right);
-	}
-}
-
-LOCALPROC MyAdjustGLforSize(int h, int v)
-{
-	if (GL_TRUE != aglSetCurrentContext(ctx)) {
-		/* err = aglReportError() */
-	} else {
-
-		glClearColor (0.0, 0.0, 0.0, 1.0);
-
-#if 1
-		glViewport(0, 0, h, v);
-		glMatrixMode(GL_PROJECTION);
-		glLoadIdentity();
-		glOrtho(0, h, 0, v, -1.0, 1.0);
-		glMatrixMode(GL_MODELVIEW);
-#endif
-
-		glColor3f(0.0, 0.0, 0.0);
-#if EnableMagnify
-		if (UseMagnify) {
-			glPixelZoom(MyWindowScale, - MyWindowScale);
-		} else
-#endif
-		{
-			glPixelZoom(1, -1);
-		}
-
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		if (GL_TRUE != aglSetCurrentContext(NULL)) {
-			/* err = aglReportError() */
-		}
-
-		NeedWholeScreenDraw = trueblnr;
-	}
-}
-
-LOCALVAR AGLPixelFormat window_fmt = NULL;
-LOCALVAR AGLContext window_ctx = NULL;
-
-#ifndef UseAGLfullscreen
-#define UseAGLfullscreen 0
-#endif
-
-#if UseAGLfullscreen
-LOCALVAR AGLPixelFormat fullscreen_fmt = NULL;
-LOCALVAR AGLContext fullscreen_ctx = NULL;
-#endif
-
-#if UseAGLfullscreen
-LOCALPROC MaybeFullScreen(void)
-{
-	if (UseFullScreen && (NULL == fullscreen_ctx)
-		&& HaveMyCGDisplayPixelsWide()
-		&& HaveMyCGDisplayPixelsHigh())
-	{
-		static const GLint fullscreen_attrib[] = {AGL_RGBA,
-			AGL_NO_RECOVERY,
-			AGL_FULLSCREEN,
-			AGL_SINGLE_RENDERER, AGL_ACCELERATED,
-#if UseAGLdoublebuff
-			AGL_DOUBLEBUFFER,
-#endif
-			AGL_NONE};
-		GDHandle theDevice;
-		CGDirectDisplayID CurMainDisplayID = MyMainDisplayID();
-
-		DMGetGDeviceByDisplayID((DisplayIDType)CurMainDisplayID, &theDevice, false);
-		fullscreen_fmt = aglChoosePixelFormat(&theDevice, 1, fullscreen_attrib);
-		if (NULL == fullscreen_fmt) {
-			/* err = aglReportError() */
-		} else {
-			fullscreen_ctx = aglCreateContext(fullscreen_fmt, NULL);
-			if (NULL == fullscreen_ctx) {
-				/* err = aglReportError() */
-			} else {
-				/* MyCaptureAllDisplays(); */
-				if (GL_TRUE != aglSetFullScreen(fullscreen_ctx, 0, 0, 0, 0))
-				{
-					/* err = aglReportError() */
-				} else {
-					Rect r;
-
-					int h = MyCGDisplayPixelsWide(CurMainDisplayID);
-					int v = MyCGDisplayPixelsHigh(CurMainDisplayID);
-
-					GetWindowBounds(gMyMainWindow, kWindowContentRgn, &r);
-
-					GLhOffset = r.left + hOffset;
-					GLvOffset = v - (r.top + vOffset);
-
-					ctx = fullscreen_ctx;
-					MyAdjustGLforSize(h, v);
-					return;
-				}
-				/* MyReleaseAllDisplays(); */
-
-				if (GL_TRUE != aglDestroyContext(fullscreen_ctx)) {
-					/* err = aglReportError() */
-				}
-				fullscreen_ctx = NULL;
-			}
-
-			aglDestroyPixelFormat (fullscreen_fmt);
-			fullscreen_fmt = NULL;
-		}
-	}
-}
-#endif
-
-#if UseAGLfullscreen
-LOCALPROC NoFullScreen(void)
-{
-	if (fullscreen_ctx != NULL) {
-		Rect r;
-		int h;
-		int v;
-
-		GetWindowBounds(gMyMainWindow, kWindowContentRgn, &r);
-
-		h = r.right - r.left;
-		v = r.bottom - r.top;
-
-		GLhOffset = hOffset;
-		GLvOffset = v - vOffset;
-
-		ctx = window_ctx;
-
-		MyAdjustGLforSize(h, v);
-
-		Update_Screen();
-
-		if (fullscreen_ctx != NULL) {
-			if (GL_TRUE != aglDestroyContext(fullscreen_ctx)) {
-				/* err = aglReportError() */
-			}
-			fullscreen_ctx = NULL;
-		}
-		if (fullscreen_fmt != NULL) {
-			aglDestroyPixelFormat(fullscreen_fmt);
-			fullscreen_fmt = NULL;
-		}
-	}
-}
-#endif
-
-#if UseAGLfullscreen
-LOCALPROC AdjustOpenGLGrab(void)
-{
-	if (GrabMachine) {
-		MaybeFullScreen();
-	} else {
-		NoFullScreen();
-	}
-}
-#endif
-
-/*--- keyboard ---*/
-
-LOCALVAR UInt32 SavedModifiers = 0;
-
-LOCALPROC MyUpdateKeyboardModifiers(UInt32 theModifiers)
-{
-	UInt32 ChangedModifiers = theModifiers ^ SavedModifiers;
-
-	if (ChangedModifiers & shiftKey) {
-		Keyboard_UpdateKeyMap2(MKC_Shift, (shiftKey & theModifiers) != 0);
-	}
-	if (ChangedModifiers & cmdKey) {
-		Keyboard_UpdateKeyMap2(MKC_Command, (cmdKey & theModifiers) != 0);
-	}
-	if (ChangedModifiers & alphaLock) {
-		Keyboard_UpdateKeyMap2(MKC_CapsLock, (alphaLock & theModifiers) != 0);
-	}
-	if (ChangedModifiers & optionKey) {
-		Keyboard_UpdateKeyMap2(MKC_Option, (optionKey & theModifiers) != 0);
-	}
-	if (ChangedModifiers & controlKey) {
-		Keyboard_UpdateKeyMap2(MKC_Control, (controlKey & theModifiers) != 0);
-	}
-	SavedModifiers = theModifiers;
-}
-
-LOCALVAR blnr WantCmdOptOnReconnect = falseblnr;
-
-LOCALPROC ReconnectKeyCodes3(void)
-{
-	UInt32 theModifiers = GetCurrentKeyModifiers();
-	UInt32 ChangedModifiers = theModifiers ^ SavedModifiers;
-
-	if (ChangedModifiers & alphaLock) {
-		Keyboard_UpdateKeyMap2(MKC_CapsLock, (alphaLock & theModifiers) != 0);
-	}
-
-	/* ignore changes to other modifiers */
-	/* except for command/option on receive drop */
-
-	if (WantCmdOptOnReconnect) {
-		WantCmdOptOnReconnect = falseblnr;
-
-		if ((optionKey & theModifiers) != 0) {
-			Keyboard_UpdateKeyMap2(MKC_Option, trueblnr);
-		}
-
-		if ((cmdKey & theModifiers) != 0) {
-			Keyboard_UpdateKeyMap2(MKC_Command, trueblnr);
-		}
-	}
-
-	SavedModifiers = theModifiers;
-}
-
-/*--- cursor hiding ---*/
-
-#if 0
-LOCALPROC MyShowCursorProc(CGDirectDisplayID display)
-{
-	(void) CGDisplayShowCursor(display);
-}
-#endif
-
-LOCALPROC MyShowCursor(void)
-{
-#if 0
-	/* ShowCursor(); deprecated */
-	DoForEachDisplay(MyShowCursorProc);
-#endif
-	if (HaveMyCGDisplayShowCursor()) {
-		(void) MyCGDisplayShowCursor(MyMainDisplayID());
-			/* documentation now claims argument ignored */
-	}
-}
-
-#if 0
-LOCALPROC MyHideCursorProc(CGDirectDisplayID display)
-{
-	(void) CGDisplayHideCursor(display);
-}
-#endif
-
-LOCALPROC MyHideCursor(void)
-{
-#if 0
-	/* HideCursor(); deprecated */
-	DoForEachDisplay(MyHideCursorProc);
-#endif
-	if (HaveMyCGDisplayHideCursor()) {
-		(void) MyCGDisplayHideCursor(MyMainDisplayID());
-			/* documentation now claims argument ignored */
-	}
-}
-
-LOCALVAR blnr HaveCursorHidden = falseblnr;
-LOCALVAR blnr WantCursorHidden = falseblnr;
-
-LOCALPROC ForceShowCursor(void)
-{
-	if (HaveCursorHidden) {
-		HaveCursorHidden = falseblnr;
-		MyShowCursor();
-	}
-}
-
-/*--- cursor moving ---*/
-
-LOCALPROC SetCursorArrow(void)
-{
-	SetThemeCursor(kThemeArrowCursor);
-}
-
-#if 0
-
-typedef CGDisplayErr (*CGDisplayMoveCursorToPointProcPtr)
-	(CGDirectDisplayID display, CGPoint point);
-LOCALVAR CGDisplayMoveCursorToPointProcPtr MyCGDisplayMoveCursorToPoint = NULL;
-LOCALVAR blnr DidCGDisplayMoveCursorToPoint = falseblnr;
-
-LOCALFUNC blnr HaveMyCGDisplayMoveCursorToPoint(void)
-{
-	if (! DidCGDisplayMoveCursorToPoint) {
-		if (HaveApplicationServicesBun()) {
-			MyCGDisplayMoveCursorToPoint =
-				(CGDisplayMoveCursorToPointProcPtr)
-				CFBundleGetFunctionPointerForName(
-					AppServBunRef, CFSTR("CGDisplayMoveCursorToPoint"));
-		}
-		DidCGDisplayMoveCursorToPoint = trueblnr;
-	}
-	return (MyCGDisplayMoveCursorToPoint != NULL);
-}
-
-#endif /* 0 */
-
-#if EnableMouseMotion && EnableFullScreen
-LOCALFUNC blnr MyMoveMouse(si4b h, si4b v)
-{
-	Point CurMousePos;
-	Rect r;
-
-#if EnableMagnify
-	if (UseMagnify) {
-		h *= MyWindowScale;
-		v *= MyWindowScale;
-	}
-#endif
-#if EnableFullScreen
-	if (UseFullScreen) {
-		h += hOffset;
-		v += vOffset;
-	}
-#endif
-	GetWindowBounds(gMyMainWindow, kWindowContentRgn, &r);
-	CurMousePos.h = r.left + h;
-	CurMousePos.v = r.top + v;
-
-	/* This method from SDL_QuartzWM.m, "Simple DirectMedia Layer", Copyright (C) 1997-2003 Sam Lantinga */
-	if (HaveMyCGSetLocalEventsSuppressionInterval()) {
-		if (noErr != MyCGSetLocalEventsSuppressionInterval(0.0)) {
-			/* don't use MacMsg which can call MyMoveMouse */
-		}
-	}
-	if (HaveMyCGWarpMouseCursorPosition()) {
-		CGPoint pt;
-		pt.x = CurMousePos.h;
-		pt.y = CurMousePos.v;
-		if (noErr != MyCGWarpMouseCursorPosition(pt)) {
-			/* don't use MacMsg which can call MyMoveMouse */
-		}
-	}
-#if 0
-	if (HaveMyCGDisplayMoveCursorToPoint()) {
-		CGPoint pt;
-		pt.x = CurMousePos.h;
-		pt.y = CurMousePos.v;
-		if (noErr != MyCGDisplayMoveCursorToPoint(MyMainDisplayID(), pt)) {
-			/* don't use MacMsg which can call MyMoveMouse */
-		}
-	}
-#endif
-
-	return trueblnr;
-}
-#endif
-
-#if EnableMouseMotion && EnableFullScreen
-LOCALVAR si4b SavedMouseH;
-LOCALVAR si4b SavedMouseV;
-#endif
-
-#if EnableMouseMotion && EnableFullScreen
-LOCALPROC AdjustMouseMotionGrab(void)
-{
-	if (gMyMainWindow != NULL) {
-#if EnableFullScreen
-		if (GrabMachine) {
-			/*
-				if magnification changes, need to reset,
-				even if HaveMouseMotion already true
-			*/
-			if (MyMoveMouse(vMacScreenWidth / 2, vMacScreenHeight / 2)) {
-				SavedMouseH = vMacScreenWidth / 2;
-				SavedMouseV = vMacScreenHeight / 2;
-				HaveMouseMotion = trueblnr;
-			}
-		} else
-#endif
-		{
-			if (HaveMouseMotion) {
-				(void) MyMoveMouse(CurMouseH, CurMouseV);
-				HaveMouseMotion = falseblnr;
-			}
-		}
-	}
-}
-#endif
-
-#if EnableMouseMotion && EnableFullScreen
-LOCALPROC MyMouseConstrain(void)
-{
-	si4b shiftdh;
-	si4b shiftdv;
-
-	if (SavedMouseH < vMacScreenWidth / 4) {
-		shiftdh = vMacScreenWidth / 2;
-	} else if (SavedMouseH > vMacScreenWidth - vMacScreenWidth / 4) {
-		shiftdh = - vMacScreenWidth / 2;
-	} else {
-		shiftdh = 0;
-	}
-	if (SavedMouseV < vMacScreenHeight / 4) {
-		shiftdv = vMacScreenHeight / 2;
-	} else if (SavedMouseV > vMacScreenHeight - vMacScreenHeight / 4) {
-		shiftdv = - vMacScreenHeight / 2;
-	} else {
-		shiftdv = 0;
-	}
-	if ((shiftdh != 0) || (shiftdv != 0)) {
-		SavedMouseH += shiftdh;
-		SavedMouseV += shiftdv;
-		if (! MyMoveMouse(SavedMouseH, SavedMouseV)) {
-			HaveMouseMotion = falseblnr;
-		}
-	}
-}
-#endif
-
-LOCALVAR blnr MouseIsOutside = falseblnr;
-	/*
-		MouseIsOutside true if sure mouse outside our window. If in
-		our window, or not sure, set false.
-	*/
-
-LOCALPROC MousePositionNotify(Point NewMousePos)
-{
-	/*
-		Not MouseIsOutside includes in the title bar, etc, so have
-		to check if in content area.
-	*/
-
-	Rect r;
-	blnr ShouldHaveCursorHidden = ! MouseIsOutside;
-
-	GetWindowBounds(gMyMainWindow, kWindowContentRgn, &r);
-
-	NewMousePos.h -= r.left;
-	NewMousePos.v -= r.top;
-
-#if EnableFullScreen
-	if (UseFullScreen) {
-		NewMousePos.h -= hOffset;
-		NewMousePos.v -= vOffset;
-	}
-#endif
-
-#if EnableMagnify
-	if (UseMagnify) {
-		NewMousePos.h /= MyWindowScale;
-		NewMousePos.v /= MyWindowScale;
-	}
-#endif
-
-#if EnableMouseMotion && EnableFullScreen
-	if (HaveMouseMotion) {
-		MyMousePositionSetDelta(NewMousePos.h - SavedMouseH,
-			NewMousePos.v - SavedMouseV);
-		SavedMouseH = NewMousePos.h;
-		SavedMouseV = NewMousePos.v;
-	} else
-#endif
-	{
-		if (NewMousePos.h < 0) {
-			NewMousePos.h = 0;
-			ShouldHaveCursorHidden = falseblnr;
-		} else if (NewMousePos.h >= vMacScreenWidth) {
-			NewMousePos.h = vMacScreenWidth - 1;
-			ShouldHaveCursorHidden = falseblnr;
-		}
-		if (NewMousePos.v < 0) {
-			NewMousePos.v = 0;
-			ShouldHaveCursorHidden = falseblnr;
-		} else if (NewMousePos.v >= vMacScreenHeight) {
-			NewMousePos.v = vMacScreenHeight - 1;
-			ShouldHaveCursorHidden = falseblnr;
-		}
-
-		/* if (ShouldHaveCursorHidden || CurMouseButton) */
-		/* for a game like arkanoid, would like mouse to still
-		move even when outside window in one direction */
-		MyMousePositionSet(NewMousePos.h, NewMousePos.v);
-	}
-
-	WantCursorHidden = ShouldHaveCursorHidden;
-}
-
-LOCALPROC CheckMouseState(void)
-{
-	Point NewMousePos;
-	GetGlobalMouse(&NewMousePos);
-		/*
-			Deprecated, but haven't found usable replacement.
-			Between window deactivate and then reactivate,
-			mouse can move without getting kEventMouseMoved.
-			Also no way to get initial position.
-			(Also don't get kEventMouseMoved after
-			using menu bar. Or while using menubar, but
-			that isn't too important.)
-		*/
-	MousePositionNotify(NewMousePos);
-}
-
-#if 0
-LOCALFUNC blnr InitMousePosition(void)
-{
-	/*
-		Since there doesn't seem to be any nondeprecated
-		way to get initial cursor position, instead
-		start by moving cursor to known position.
-	*/
-
-#if EnableFullScreen
-	if (! UseFullScreen)
-#endif
-	{
-		CurMouseH = 16;
-		CurMouseV = 16;
-		WantCursorHidden = trueblnr;
-		(void) MyMoveMouse(CurMouseH, CurMouseV);
-	}
-
-	return trueblnr;
-}
-#endif
-
-LOCALPROC DisconnectKeyCodes3(void)
-{
-	DisconnectKeyCodes2();
-
-	MyMouseButtonSet(falseblnr);
-
-	ForceShowCursor();
-}
-
-/*--- time, date, location ---*/
-
-/*
-	be sure to avoid getting confused if TickCount
-	overflows and wraps.
-*/
-
-LOCALVAR ui5b TrueEmulatedTime = 0;
-LOCALVAR ui5b CurEmulatedTime = 0;
-
-LOCALVAR EventTime NextTickChangeTime;
-
-#define MyTickDuration (kEventDurationSecond / 60.14742)
-
-#include "DATE2SEC.h"
-
-/* LOCALVAR EventTime ETimeBase; */
-LOCALVAR CFAbsoluteTime ATimeBase;
-LOCALVAR ui5b TimeSecBase;
-
-LOCALFUNC blnr InitLocationDat(void)
-{
-	MachineLocation loc;
-
-	ReadLocation(&loc);
-	CurMacLatitude = (ui5b)loc.latitude;
-	CurMacLongitude = (ui5b)loc.longitude;
-	CurMacDelta = (ui5b)loc.u.gmtDelta;
-
-	{
-		CFTimeZoneRef tz = CFTimeZoneCopySystem();
-		if (tz) {
-			/* CFAbsoluteTime */ ATimeBase = CFAbsoluteTimeGetCurrent();
-			/* ETimeBase = GetCurrentEventTime(); */
-			{
-				CFGregorianDate d = CFAbsoluteTimeGetGregorianDate(ATimeBase, tz);
-				double floorsec = floor(d.second);
-				ATimeBase -= (d.second - floorsec);
-				/* ETimeBase -= (d.second - floorsec); */
-				TimeSecBase = Date2MacSeconds(floorsec, d.minute, d.hour,
-					d.day, d.month, d.year);
-			}
-			CFRelease(tz);
-		}
-	}
-
-	return trueblnr;
-}
-
-LOCALPROC StartUpTimeAdjust(void)
-{
-	NextTickChangeTime = GetCurrentEventTime() + MyTickDuration;
-}
-
-LOCALPROC UpdateTrueEmulatedTime(void)
-{
-	EventTime LatestTime = GetCurrentEventTime();
-	EventTime TimeDiff = LatestTime - NextTickChangeTime;
-
-	if (TimeDiff >= 0.0) {
-		if (TimeDiff > 3 * MyTickDuration) {
-			/* emulation interrupted, forget it */
-			++TrueEmulatedTime;
-			NextTickChangeTime = LatestTime + MyTickDuration;
-		} else {
-			do {
-				++TrueEmulatedTime;
-				TimeDiff -= MyTickDuration;
-				NextTickChangeTime += MyTickDuration;
-			} while (TimeDiff >= 0.0);
-		}
-	}
-}
-
-LOCALFUNC blnr CheckDateTime(void)
-{
-	ui5b NewMacDateInSecond = TimeSecBase + (ui5b)(CFAbsoluteTimeGetCurrent() - ATimeBase);
-	/* ui5b NewMacDateInSecond = TimeSecBase + (ui5b)(GetCurrentEventTime() - ETimeBase); */
-	/* ui5b NewMacDateInSecond = ((ui5b)(CFAbsoluteTimeGetCurrent()))  + 3061137600UL; */
-
-	if (CurMacDateInSeconds != NewMacDateInSecond) {
-		CurMacDateInSeconds = NewMacDateInSecond;
-		return trueblnr;
-	} else {
-		return falseblnr;
-	}
-}
-
-/*--- sound ---*/
-
-#if MySoundEnabled
-
-
-#define kLn2SoundBuffers 4 /* kSoundBuffers must be a power of two */
-#define kSoundBuffers (1 << kLn2SoundBuffers)
-#define kSoundBuffMask (kSoundBuffers - 1)
-
-#define DesiredMinFilledSoundBuffs 3
-	/*
-		if too big then sound lags behind emulation.
-		if too small then sound will have pauses.
-	*/
-
-#define kLnOneBuffLen 9
-#define kLnAllBuffLen (kLn2SoundBuffers + kLnOneBuffLen)
-#define kOneBuffLen (1UL << kLnOneBuffLen)
-#define kAllBuffLen (1UL << kLnAllBuffLen)
-#define kLnOneBuffSz (kLnOneBuffLen + kLn2SoundSampSz - 3)
-#define kLnAllBuffSz (kLnAllBuffLen + kLn2SoundSampSz - 3)
-#define kOneBuffSz (1UL << kLnOneBuffSz)
-#define kAllBuffSz (1UL << kLnAllBuffSz)
-#define kOneBuffMask (kOneBuffLen - 1)
-#define kAllBuffMask (kAllBuffLen - 1)
-#define dbhBufferSize (kAllBuffSz + kOneBuffSz)
-
-#define DbgLog_SoundStuff 0
-#define DbgLog_SoundBuffStats (0 && MakeDumpFile)
-
-LOCALVAR tpSoundSamp TheSoundBuffer = nullpr;
-volatile static ui4b ThePlayOffset;
-volatile static ui4b TheFillOffset;
-volatile static blnr wantplaying;
-volatile static ui4b MinFilledSoundBuffs;
-#if DbgLog_SoundBuffStats
-LOCALVAR ui4b MaxFilledSoundBuffs;
-#endif
-LOCALVAR ui4b TheWriteOffset;
-
-#if MySoundRecenterSilence
-#define SilentBlockThreshold 96
-LOCALVAR trSoundSamp LastSample = 0x00;
-LOCALVAR trSoundSamp LastModSample;
-LOCALVAR ui4r SilentBlockCounter;
-#endif
-
-LOCALPROC RampSound(tpSoundSamp p, trSoundSamp BeginVal, trSoundSamp EndVal)
-{
-	int i;
-	ui5r v = (((ui5r)BeginVal) << kLnOneBuffLen) + (kLnOneBuffLen >> 1);
-
-	for (i = kOneBuffLen; --i >= 0; ) {
-		*p++ = v >> kLnOneBuffLen;
-		v = v + EndVal - BeginVal;
-	}
-}
-
-#if 4 == kLn2SoundSampSz
-LOCALPROC ConvertSoundBlockToNative(tpSoundSamp p)
-{
-	int i;
-
-	for (i = kOneBuffLen; --i >= 0; ) {
-		*p++ -= 0x8000;
-	}
-}
-#else
-#define ConvertSoundBlockToNative(p)
-#endif
-
-#if 4 == kLn2SoundSampSz
-#define ConvertSoundSampleToNative(v) ((v) + 0x8000)
-#else
-#define ConvertSoundSampleToNative(v) (v)
-#endif
-
-LOCALPROC MySound_Start0(void)
-{
-	ThePlayOffset = 0;
-	TheFillOffset = 0;
-	TheWriteOffset = 0;
-	MinFilledSoundBuffs = kSoundBuffers;
-#if DbgLog_SoundBuffStats
-	MaxFilledSoundBuffs = 0;
-#endif
-	wantplaying = falseblnr;
-
-#if MySoundRecenterSilence
-	LastModSample = kCenterSound;
-	SilentBlockCounter = SilentBlockThreshold;
-#endif
-}
-
-
-LOCALPROC MySound_SecondNotify0(void)
-{
-	if (MinFilledSoundBuffs > DesiredMinFilledSoundBuffs) {
-		++CurEmulatedTime;
-	} else if (MinFilledSoundBuffs < DesiredMinFilledSoundBuffs) {
-		--CurEmulatedTime;
-	}
-#if DbgLog_SoundBuffStats
-	fprintf(DumpFile, "MinFilledSoundBuffs = %d\n", MinFilledSoundBuffs);
-	fprintf(DumpFile, "MaxFilledSoundBuffs = %d\n", MaxFilledSoundBuffs);
-	MaxFilledSoundBuffs = 0;
-#endif
-	MinFilledSoundBuffs = kSoundBuffers;
-}
-
-/*
-	Some of this code descended from CarbonSndPlayDB, an
-	example from Apple, as found being used in vMac for Mac OS.
-*/
-
-#define SOUND_SAMPLERATE rate22khz /* = 0x56EE8BA3 = (7833600 * 2 / 704) << 16 */
-
-/* Structs */
-struct PerChanInfo {
-	volatile ui4b (*CurPlayOffset);
-	volatile ui4b (*CurFillOffset);
-	volatile ui4b (*MinFilledSoundBuffs);
-	volatile blnr PlayingBuffBlock;
-	volatile trSoundSamp lastv;
-	volatile blnr (*wantplaying);
-	tpSoundSamp dbhBufferPtr;
-	CmpSoundHeader /* ExtSoundHeader */ soundHeader;
-};
-typedef struct PerChanInfo   PerChanInfo;
-typedef struct PerChanInfo * PerChanInfoPtr;
-
-LOCALPROC InsertSndDoCommand (SndChannelPtr chan, SndCommand * newCmd)
-{
-	if (-1 == chan->qHead) {
-		chan->qHead = chan->qTail;
-	}
-
-	if (1 <= chan->qHead) {
-		chan->qHead--;
-	} else {
-		chan->qHead = chan->qTail;
-	}
-
-	chan->queue[chan->qHead] = *newCmd;
-}
-
-/* call back */ static pascal void MySound_CallBack (SndChannelPtr theChannel, SndCommand * theCallBackCmd)
-{
-	PerChanInfoPtr perChanInfoPtr = (PerChanInfoPtr)(theCallBackCmd->param2);
-	blnr wantplaying0 = *perChanInfoPtr->wantplaying;
-
-#if DbgLog_SoundStuff
-	fprintf(stderr, "Enter MySound_CallBack\n");
-#endif
-
-	if (perChanInfoPtr->PlayingBuffBlock) {
-		/* finish with last sample */
-#if DbgLog_SoundStuff
-		fprintf(stderr, "done with sample\n");
-#endif
-
-		*perChanInfoPtr->CurPlayOffset += kOneBuffLen;
-		perChanInfoPtr->PlayingBuffBlock = falseblnr;
-	}
-
-	if ((! wantplaying0) && (kCenterSound == perChanInfoPtr->lastv)) {
-#if DbgLog_SoundStuff
-		fprintf(stderr, "terminating\n");
-#endif
-	} else {
-		SndCommand playCmd;
-		tpSoundSamp p;
-		ui4b CurPlayOffset = *perChanInfoPtr->CurPlayOffset;
-		ui4b ToPlayLen = *perChanInfoPtr->CurFillOffset - CurPlayOffset;
-		ui4b FilledSoundBuffs = ToPlayLen >> kLnOneBuffLen;
-
-		if (FilledSoundBuffs < *perChanInfoPtr->MinFilledSoundBuffs) {
-			*perChanInfoPtr->MinFilledSoundBuffs = FilledSoundBuffs;
-		}
-
-		if (wantplaying0 && (0 != FilledSoundBuffs)) {
-			/* play next sample */
-			p = perChanInfoPtr->dbhBufferPtr + (CurPlayOffset & kAllBuffMask);
-			perChanInfoPtr->PlayingBuffBlock = trueblnr;
-			perChanInfoPtr->lastv = ConvertSoundSampleToNative(*(p + kOneBuffLen - 1));
-#if DbgLog_SoundStuff
-			fprintf(stderr, "playing sample\n");
-#endif
-		} else {
-#if DbgLog_SoundStuff
-			fprintf(stderr, "playing transistion\n");
-#endif
-			/* play transition */
-			trSoundSamp v0 = perChanInfoPtr->lastv;
-			trSoundSamp v1 = v0;
-			p = perChanInfoPtr->dbhBufferPtr + kAllBuffLen;
-			if (! wantplaying0) {
-#if DbgLog_SoundStuff
-				fprintf(stderr, "transistion to silence\n");
-#endif
-				v1 = kCenterSound;
-				perChanInfoPtr->lastv = kCenterSound;
-			}
-
-#if DbgLog_SoundStuff
-			fprintf(stderr, "v0 %d\n", v0);
-			fprintf(stderr, "v1 %d\n", v1);
-#endif
-
-			RampSound(p, v0, v1);
-			ConvertSoundBlockToNative(p);
-		}
-
-		perChanInfoPtr->soundHeader.samplePtr = (Ptr)p;
-		perChanInfoPtr->soundHeader.numFrames = (unsigned long)kOneBuffLen;
-
-		/* Insert our callback command */
-		InsertSndDoCommand (theChannel, theCallBackCmd);
-
-#if 0
-		{
-			int i;
-			tpSoundSamp pS = (tpSoundSamp)perChanInfoPtr->soundHeader.samplePtr;
-
-			for (i = perChanInfoPtr->soundHeader.numFrames; --i >= 0; ) {
-				fprintf(stderr, "%d\n", *pS++);
-			}
-		}
-#endif
-
-		/* Play the next buffer */
-		playCmd.cmd = bufferCmd;
-		playCmd.param1 = 0;
-		playCmd.param2 = (long)&(perChanInfoPtr->soundHeader);
-		InsertSndDoCommand (theChannel, &playCmd);
-	}
-}
-
-
-LOCALVAR PerChanInfo TheperChanInfoR;
-
-LOCALVAR SndCallBackUPP gCarbonSndPlayDoubleBufferCallBackUPP = NULL;
-
-LOCALVAR SndChannelPtr sndChannel = NULL; /* our sound channel */
-
-LOCALPROC MySound_BeginPlaying(void)
-{
-#if DbgLog_SoundStuff
-	fprintf(stderr, "MySound_BeginPlaying\n");
-#endif
-
-	if (NULL != sndChannel) {
-		SndCommand callBack;
-
-		callBack.cmd = callBackCmd;
-		callBack.param1 = 0; /* unused */
-		callBack.param2 = (long)&TheperChanInfoR;
-
-		sndChannel->callBack = gCarbonSndPlayDoubleBufferCallBackUPP;
-
-		(void) SndDoCommand (sndChannel, &callBack, true);
-	}
-}
-
-LOCALPROC MySound_Start(void)
-{
-	if (NULL == sndChannel) {
-		SndChannelPtr  chan = NULL;
-
-		MySound_Start0();
-
-		SndNewChannel(&chan, sampledSynth, initMono, nil);
-		if (chan != NULL) {
-			sndChannel = chan;
-
-			TheperChanInfoR.PlayingBuffBlock = falseblnr;
-			TheperChanInfoR.lastv = kCenterSound;
-		}
-	}
-}
-
-#define IgnorableEventMask (mUpMask | keyDownMask | keyUpMask | autoKeyMask)
-
-LOCALPROC MySound_Stop(void)
-{
-	if (sndChannel != NULL) {
-#if 1
-/*
-		this may not be necessary, but try to clean up
-		in case it might help prevent problems.
-*/
-		SCStatus r;
-		blnr busy = falseblnr;
-
-		wantplaying = falseblnr;
-		do {
-			r.scChannelBusy = falseblnr; /* what is this for? */
-			if (noErr == SndChannelStatus(sndChannel,
-				sizeof(SCStatus), &r))
-			{
-				busy = r.scChannelBusy;
-			}
-#if 0
-			if (busy) {
-				/*
-					give time back, particularly important
-					if got here on a suspend event.
-				*/
-				/*
-					Oops, no. Not with carbon events. Our
-					own callbacks can get called, such
-					as MyTimerProc.
-				*/
-				EventRecord theEvent;
-
-				{
-					(void) WaitNextEvent(IgnorableEventMask, &theEvent, 1, NULL);
-				}
-			}
-#endif
-		} while (busy);
-#endif
-		SndDisposeChannel(sndChannel, true);
-		sndChannel = NULL;
-	}
-}
-
-LOCALFUNC blnr MySound_Init(void)
-{
-	gCarbonSndPlayDoubleBufferCallBackUPP = NewSndCallBackUPP(MySound_CallBack);
-	if (gCarbonSndPlayDoubleBufferCallBackUPP != NULL) {
-		TheperChanInfoR.dbhBufferPtr = TheSoundBuffer;
-
-		TheperChanInfoR.CurPlayOffset = &ThePlayOffset;
-		TheperChanInfoR.CurFillOffset = &TheFillOffset;
-		TheperChanInfoR.MinFilledSoundBuffs = &MinFilledSoundBuffs;
-		TheperChanInfoR.wantplaying = &wantplaying;
-
-		/* Init basic per channel information */
-		TheperChanInfoR.soundHeader.sampleRate = SOUND_SAMPLERATE; /* sample rate */
-		TheperChanInfoR.soundHeader.numChannels = 1; /* one channel */
-		TheperChanInfoR.soundHeader.loopStart = 0;
-		TheperChanInfoR.soundHeader.loopEnd = 0;
-		TheperChanInfoR.soundHeader.encode = cmpSH /* extSH */;
-		TheperChanInfoR.soundHeader.baseFrequency = kMiddleC;
-		TheperChanInfoR.soundHeader.numFrames = (unsigned long)kOneBuffLen;
-		/* TheperChanInfoR.soundHeader.AIFFSampleRate = 0; */ /* unused */
-		TheperChanInfoR.soundHeader.markerChunk = nil;
-		TheperChanInfoR.soundHeader.futureUse2 = 0;
-		TheperChanInfoR.soundHeader.stateVars = nil;
-		TheperChanInfoR.soundHeader.leftOverSamples = nil;
-		TheperChanInfoR.soundHeader.compressionID = 0; /* no compression */
-		TheperChanInfoR.soundHeader.packetSize = 0; /* no compression */
-		TheperChanInfoR.soundHeader.snthID = 0;
-		TheperChanInfoR.soundHeader.sampleSize = (1 << kLn2SoundSampSz); /* 8 or 16 bits per sample */
-		TheperChanInfoR.soundHeader.sampleArea[0] = 0;
-#if 3 == kLn2SoundSampSz
-		TheperChanInfoR.soundHeader.format = kSoundNotCompressed;
-#elif 4 == kLn2SoundSampSz
-		TheperChanInfoR.soundHeader.format = k16BitNativeEndianFormat;
-#else
-#error "unsupported kLn2SoundSampSz"
-#endif
-		TheperChanInfoR.soundHeader.samplePtr = (Ptr)TheSoundBuffer;
-
-		return trueblnr;
-	}
-	return falseblnr;
-}
-
-
-LOCALPROC MySound_WroteABlock(void)
-{
-#if MySoundRecenterSilence || (4 == kLn2SoundSampSz)
-	ui4b PrevWriteOffset = TheWriteOffset - kOneBuffLen;
-	tpSoundSamp p = TheSoundBuffer + (PrevWriteOffset & kAllBuffMask);
-#endif
-
-#if MySoundRecenterSilence
-	int i;
-	tpSoundSamp p0;
-	trSoundSamp lastv = LastSample;
-	blnr GotSilentBlock = trueblnr;
-
-	p0 = p;
-	for (i = kOneBuffLen; --i >= 0; ) {
-		trSoundSamp v = *p++;
-		if (v != lastv) {
-			LastSample = *(p0 + kOneBuffLen - 1);
-			GotSilentBlock = falseblnr;
-			goto label_done;
-		}
-	}
-label_done:
-	p = p0;
-
-	if (GotSilentBlock) {
-		if ((! wantplaying) && (PrevWriteOffset == ThePlayOffset)) {
-			TheWriteOffset = PrevWriteOffset;
-			return; /* forget this block */
-		}
-		++SilentBlockCounter;
-#if DbgLog_SoundStuff
-		fprintf(stderr, "GotSilentBlock %d\n", SilentBlockCounter);
-#endif
-		if (SilentBlockCounter >= SilentBlockThreshold) {
-			trSoundSamp NewModSample;
-
-			if (SilentBlockThreshold == SilentBlockCounter) {
-				LastModSample = LastSample;
-			} else {
-				SilentBlockCounter = SilentBlockThreshold; /* prevent overflow */
-			}
-#if 3 == kLn2SoundSampSz
-			if (LastModSample > kCenterSound) {
-				NewModSample = LastModSample - 1;
-			} else if (LastModSample < kCenterSound) {
-				NewModSample = LastModSample + 1;
-			} else {
-				NewModSample = kCenterSound;
-			}
-#elif 4 == kLn2SoundSampSz
-			if (LastModSample > kCenterSound + 0x0100) {
-				NewModSample = LastModSample - 0x0100;
-			} else if (LastModSample < kCenterSound - 0x0100) {
-				NewModSample = LastModSample + 0x0100;
-			} else {
-				NewModSample = kCenterSound;
-			}
-#else
-#error "unsupported kLn2SoundSampSz"
-#endif
-#if DbgLog_SoundStuff
-			fprintf(stderr, "LastModSample %d\n", LastModSample);
-#endif
-			RampSound(p, LastModSample, NewModSample);
-			LastModSample = NewModSample;
-		}
-	} else {
-		if (SilentBlockCounter >= SilentBlockThreshold) {
-			tpSoundSamp pramp;
-			ui4b TotLen = TheWriteOffset
-				- ThePlayOffset;
-			ui4b TotBuffs = TotLen >> kLnOneBuffLen;
-
-			if (TotBuffs >= 3) {
-				pramp = TheSoundBuffer
-					+ ((PrevWriteOffset - kOneBuffLen) & kAllBuffMask);
-			} else {
-				pramp = p;
-				p = TheSoundBuffer + (TheWriteOffset & kAllBuffMask);
-				MyMoveBytes((anyp)pramp, (anyp)p, kOneBuffSz);
-				TheWriteOffset += kOneBuffLen;
-			}
-#if DbgLog_SoundStuff
-			fprintf(stderr, "LastModSample %d\n", LastModSample);
-			fprintf(stderr, "LastSample %d\n", LastSample);
-#endif
-			RampSound(pramp, LastModSample, LastSample);
-			ConvertSoundBlockToNative(pramp);
-		}
-		SilentBlockCounter = 0;
-	}
-#endif
-
-	ConvertSoundBlockToNative(p);
-
-	if (wantplaying) {
-		TheFillOffset = TheWriteOffset;
-	} else if (((TheWriteOffset - ThePlayOffset) >> kLnOneBuffLen) < 12) {
-		/* just wait */
-	} else {
-		TheFillOffset = TheWriteOffset;
-		wantplaying = trueblnr;
-		MySound_BeginPlaying();
-	}
-
-#if DbgLog_SoundBuffStats
-	{
-		ui4b ToPlayLen = TheFillOffset
-			- ThePlayOffset;
-		ui4b ToPlayBuffs = ToPlayLen >> kLnOneBuffLen;
-
-		if (ToPlayBuffs > MaxFilledSoundBuffs) {
-			MaxFilledSoundBuffs = ToPlayBuffs;
-		}
-	}
-#endif
-}
-
-GLOBALPROC MySound_EndWrite(ui4r actL)
-{
-	TheWriteOffset += actL;
-
-	if (0 == (TheWriteOffset & kOneBuffMask)) {
-		/* just finished a block */
-
-		MySound_WroteABlock();
-	}
-}
-
-GLOBALFUNC tpSoundSamp MySound_BeginWrite(ui4r n, ui4r *actL)
-{
-	ui4b ToFillLen = kAllBuffLen - (TheWriteOffset - ThePlayOffset);
-	ui4b WriteBuffContig = kOneBuffLen - (TheWriteOffset & kOneBuffMask);
-
-	if (WriteBuffContig < n) {
-		n = WriteBuffContig;
-	}
-	if (ToFillLen < n) {
-		/* overwrite previous buffer */
-		TheWriteOffset -= kOneBuffLen;
-	}
-
-	*actL = n;
-	return TheSoundBuffer + (TheWriteOffset & kAllBuffMask);
-}
-
-LOCALPROC MySound_SecondNotify(void)
-{
-	if (sndChannel != NULL) {
-		MySound_SecondNotify0();
-	}
-}
-
-#endif
-
-#if EnableFullScreen
-LOCALPROC AdjustMachineGrab(void)
-{
-#if EnableMouseMotion
-	AdjustMouseMotionGrab();
-#endif
-#if UseAGLfullscreen
-	AdjustOpenGLGrab();
-#endif
-#if 0
-	AdjustMainScreenGrab();
-#endif
-}
-#endif
-
-#if EnableFullScreen
-LOCALPROC UngrabMachine(void)
+LOCALPROC WriteExtraErr(char *s)
 {
-	GrabMachine = falseblnr;
-	AdjustMachineGrab();
+	fprintf(stderr, "*** error: %s\n", s);
 }
 #endif
 
-/*--- basic dialogs ---*/
+/*--- text translation ---*/
 
-LOCALPROC UniCharStrFromSubstCStr(int *L, UniChar *x, char *s, blnr AddEllipsis)
+LOCALPROC NativeStrFromCStr(char *r, char *s, blnr AddEllipsis)
 {
-	int i;
-	int L0;
 	ui3b ps[ClStrMaxLength];
-
-	ClStrFromSubstCStr(&L0, ps, s);
-	if (AddEllipsis) {
-		ClStrAppendChar(&L0, ps, kCellEllipsis);
-	}
-
-	for (i = 0; i < L0; ++i) {
-		x[i] = Cell2UnicodeMap[ps[i]];
-	}
-
-	*L = L0;
-}
-
-LOCALFUNC CFStringRef UnicodeStrFromCStr(char *s, blnr AddEllipsis)
-{
+	int i;
 	int L;
-	UniChar x[ClStrMaxLength];
 
-	UniCharStrFromSubstCStr(&L, x, s, AddEllipsis);
+	ClStrFromSubstCStr(&L, ps, s);
 
-	return CFStringCreateWithCharacters(kCFAllocatorDefault, x, L);
-}
-
-LOCALVAR blnr gBackgroundFlag = falseblnr;
-LOCALVAR blnr gTrueBackgroundFlag = falseblnr;
-LOCALVAR blnr CurSpeedStopped = trueblnr;
-
-LOCALVAR blnr ADialogIsUp = falseblnr;
-
-LOCALPROC MyBeginDialog(void)
-{
-	DisconnectKeyCodes3();
-	ADialogIsUp = trueblnr;
-#if EnableFullScreen
-	UngrabMachine();
-#endif
-}
-
-LOCALPROC MyEndDialog(void)
-{
-	ADialogIsUp = falseblnr;
-	ReconnectKeyCodes3();
-}
-
-#define kMyStandardAlert 128
-
-LOCALPROC CheckSavedMacMsg(void)
-{
-	if (nullpr != SavedBriefMsg) {
-		MyBeginDialog();
-		if (HaveMyCreateStandardAlert() && HaveMyRunStandardAlert()) {
-			CFStringRef briefMsgu = UnicodeStrFromCStr(SavedBriefMsg, falseblnr);
-			if (NULL != briefMsgu) {
-				CFStringRef longMsgu = UnicodeStrFromCStr(SavedLongMsg, falseblnr);
-				if (NULL != longMsgu) {
-					DialogRef TheAlert;
-					OSStatus err = MyCreateStandardAlert(
-						(SavedFatalMsg) ? kAlertStopAlert : kAlertCautionAlert,
-						briefMsgu, longMsgu, NULL,
-						&TheAlert);
-					if (noErr == err) {
-						err = MyRunStandardAlert(TheAlert, NULL, NULL);
-					}
-					CFRelease(longMsgu);
-				}
-				CFRelease(briefMsgu);
-			}
-		}
-		MyEndDialog();
-
-		SavedBriefMsg = nullpr;
-	}
-}
-
-/*--- hide/show menubar ---*/
-
-#if EnableFullScreen
-LOCALPROC My_HideMenuBar(void)
-{
-	if (HaveMySetSystemUIMode()) {
-		(void) MySetSystemUIMode(MykUIModeAllHidden,
-			MykUIOptionDisableAppleMenu
-			| MykUIOptionDisableProcessSwitch
-			/* | MykUIOptionDisableForceQuit */ /* too dangerous */
-			| MykUIOptionDisableSessionTerminate);
-	} else {
-		if (IsMenuBarVisible()) {
-			HideMenuBar();
-		}
-	}
-}
-#endif
-
-#if EnableFullScreen
-LOCALPROC My_ShowMenuBar(void)
-{
-	if (HaveMySetSystemUIMode()) {
-		(void) MySetSystemUIMode(MykUIModeNormal,
-			0);
-	} else {
-		if (! IsMenuBarVisible()) {
-			ShowMenuBar();
-		}
-	}
-}
-#endif
-
-#if IncludePbufs
-LOCALVAR void *PbufDat[NumPbufs];
-#endif
-
-#if IncludePbufs
-GLOBALFUNC tMacErr PbufNew(ui5b count, tPbuf *r)
-{
-	tPbuf i;
-	void *p;
-	tMacErr err = mnvm_miscErr;
-
-	if (FirstFreePbuf(&i)) {
-		p = calloc(1, count);
-		if (p != NULL) {
-			*r = i;
-			PbufDat[i] = p;
-			PbufNewNotify(i, count);
-
-			err = mnvm_noErr;
-		}
+	for (i = 0; i < L; ++i) {
+		r[i] = Cell2PlainAsciiMap[ps[i]];
 	}
 
-	return err;
-}
-#endif
-
-#if IncludePbufs
-GLOBALPROC PbufDispose(tPbuf i)
-{
-	free(PbufDat[i]);
-	PbufDisposeNotify(i);
-}
-#endif
-
-#if IncludePbufs
-LOCALPROC UnInitPbufs(void)
-{
-	tPbuf i;
-
-	for (i = 0; i < NumPbufs; ++i) {
-		if (PbufIsAllocated(i)) {
-			PbufDispose(i);
-		}
-	}
-}
-#endif
-
-#if IncludePbufs
-GLOBALPROC PbufTransfer(ui3p Buffer,
-	tPbuf i, ui5r offset, ui5r count, blnr IsWrite)
-{
-	void *p = ((ui3p)PbufDat[i]) + offset;
-	if (IsWrite) {
-		(void) memcpy(p, Buffer, count);
-	} else {
-		(void) memcpy(Buffer, p, count);
-	}
-}
-#endif
-
-#define CheckSavetMacErr(result) (mnvm_noErr == (err = (result)))
-	/* where 'err' is a variable of type tMacErr in the function this is used in */
-
-#define To_tMacErr(result) ((tMacErr)(ui4b)(result))
-
-#define CheckSaveMacErr(result) (CheckSavetMacErr(To_tMacErr(result)))
-
-#if IncludeHostTextClipExchange
-GLOBALFUNC tMacErr HTCEexport(tPbuf i)
-{
-	tMacErr err;
-	ScrapRef scrapRef;
-
-	if (CheckSaveMacErr(ClearCurrentScrap()))
-	if (CheckSaveMacErr(GetCurrentScrap(&scrapRef)))
-	if (CheckSaveMacErr(PutScrapFlavor(
-		scrapRef,
-		FOUR_CHAR_CODE('TEXT'),
-		kScrapFlavorMaskNone,
-		PbufSize[i],
-		PbufDat[i])))
-	{
-		/* ok */
+	if (AddEllipsis) {
+		r[L] = '.';
+		++L;
+		r[L] = '.';
+		++L;
+		r[L] = '.';
+		++L;
 	}
 
-	PbufDispose(i);
-
-	return err;
+	r[L] = 0;
 }
-#endif
-
-#if IncludeHostTextClipExchange
-GLOBALFUNC tMacErr HTCEimport(tPbuf *r)
-{
-	tMacErr err;
-	ScrapRef scrap;
-	ScrapFlavorFlags flavorFlags;
-	Size byteCount;
-	tPbuf i;
-
-	if (CheckSaveMacErr(GetCurrentScrap(&scrap)))
-	if (CheckSaveMacErr(GetScrapFlavorFlags(scrap,
-		'TEXT', &flavorFlags)))
-	if (CheckSaveMacErr(GetScrapFlavorSize(scrap,
-		'TEXT', &byteCount)))
-	if (CheckSavetMacErr(PbufNew(byteCount, &i)))
-	{
-		Size byteCount2 = byteCount;
-		if (CheckSaveMacErr(GetScrapFlavorData(scrap,
-			'TEXT', &byteCount2,
-			PbufDat[i])))
-		{
-			if (byteCount != byteCount2) {
-				err = mnvm_miscErr;
-			}
-		}
-		if (mnvm_noErr != err) {
-			PbufDispose(i);
-		} else {
-			*r = i;
-		}
-	}
-
-	return err;
-}
-#endif
 
 /*--- drives ---*/
 
-#define NotAfileRef (-1)
+#define NotAfileRef NULL
 
-LOCALVAR SInt16 Drives[NumDrives]; /* open disk image files */
+LOCALVAR FILE *Drives[NumDrives]; /* open disk image files */
 
 LOCALPROC InitDrives(void)
 {
 	/*
-		This isn't really needed, Drives[i]
-		need not have valid value when not vSonyIsInserted[i].
+		This isn't really needed, Drives[i] and DriveNames[i]
+		need not have valid values when not vSonyIsInserted[i].
 	*/
 	tDrive i;
 
@@ -2414,52 +95,39 @@ LOCALPROC InitDrives(void)
 
 GLOBALFUNC tMacErr vSonyRead(ui3p Buffer, tDrive Drive_No, ui5r Sony_Start, ui5r *Sony_Count)
 {
-	ByteCount actualCount;
-	tMacErr err = To_tMacErr(FSReadFork(
-		Drives[Drive_No],
-		fsFromStart,
-		Sony_Start,
-		*Sony_Count,
-		Buffer,
-		&actualCount));
-
-	*Sony_Count = actualCount;
-	return err;
+	fseek(Drives[Drive_No], Sony_Start, SEEK_SET);
+	fread(Buffer, 1, *Sony_Count, Drives[Drive_No]);
+	return mnvm_noErr; /*& figure out what really to return &*/
 }
 
 GLOBALFUNC tMacErr vSonyWrite(ui3p Buffer, tDrive Drive_No, ui5r Sony_Start, ui5r *Sony_Count)
 {
-	ByteCount actualCount;
-	tMacErr err = To_tMacErr(FSWriteFork(
-		Drives[Drive_No],
-		fsFromStart,
-		Sony_Start,
-		*Sony_Count,
-		Buffer,
-		&actualCount));
-
-	*Sony_Count = actualCount;
-	return err;
+	fseek(Drives[Drive_No], Sony_Start, SEEK_SET);
+	fwrite(Buffer, 1, *Sony_Count, Drives[Drive_No]);
+	return mnvm_noErr; /*& figure out what really to return &*/
 }
 
 GLOBALFUNC tMacErr vSonyGetSize(tDrive Drive_No, ui5r *Sony_Count)
 {
-	SInt64 forkSize;
-	tMacErr err = To_tMacErr(FSGetForkSize(Drives[Drive_No], &forkSize));
-	*Sony_Count = forkSize;
-	return err;
+	fseek(Drives[Drive_No], 0, SEEK_END);
+	*Sony_Count = ftell(Drives[Drive_No]);
+	return mnvm_noErr; /*& figure out what really to return &*/
+}
+
+LOCALFUNC tMacErr vSonyEject0(tDrive Drive_No, blnr deleteit)
+{
+	DiskEjectedNotify(Drive_No);
+
+	fclose(Drives[Drive_No]);
+	Drives[Drive_No] = NotAfileRef; /* not really needed */
+
+
+	return mnvm_noErr;
 }
 
 GLOBALFUNC tMacErr vSonyEject(tDrive Drive_No)
 {
-	SInt16 refnum = Drives[Drive_No];
-	Drives[Drive_No] = NotAfileRef;
-
-	DiskEjectedNotify(Drive_No);
-
-	(void) FSCloseFork(refnum);
-
-	return mnvm_noErr;
+	return vSonyEject0(Drive_No, falseblnr);
 }
 
 LOCALPROC UnInitDrives(void)
@@ -2473,1606 +141,890 @@ LOCALPROC UnInitDrives(void)
 	}
 }
 
-#if IncludeSonyNew
-GLOBALFUNC tMacErr vSonyEjectDelete(tDrive Drive_No)
-{
-	FSRef ref;
-	tMacErr err0;
-	tMacErr err;
-
-	err0 = To_tMacErr(FSGetForkCBInfo(Drives[Drive_No], 0,
-		NULL /* iterator */,
-		NULL /* actualRefNum */,
-		NULL /* forkInfo */,
-		&ref /* ref */,
-		NULL /* outForkName */));
-	err = vSonyEject(Drive_No);
-
-	if (mnvm_noErr != err0) {
-		err = err0;
-	} else {
-		(void) FSDeleteObject(&ref);
-	}
-
-	return err;
-}
-#endif
-
-#if IncludeSonyGetName
-GLOBALFUNC tMacErr vSonyGetName(tDrive Drive_No, tPbuf *r)
-{
-	FSRef ref;
-	HFSUniStr255 outName;
-	CFStringRef DiskName;
-	tMacErr err;
-
-	if (CheckSaveMacErr(FSGetForkCBInfo(Drives[Drive_No], 0,
-		NULL /* iterator */,
-		NULL /* actualRefNum */,
-		NULL /* forkInfo */,
-		&ref /* ref */,
-		NULL /* outForkName */)))
-	if (CheckSaveMacErr(FSGetCatalogInfo(&ref,
-		kFSCatInfoNone /* whichInfo */,
-		NULL /* catalogInfo */,
-		&outName /* outName */,
-		NULL /*fsSpec */,
-		NULL /* parentRef */)))
-	{
-		DiskName = CFStringCreateWithCharacters(
-			kCFAllocatorDefault, outName.unicode,
-			outName.length);
-		if (NULL != DiskName) {
-			tPbuf i;
-
-			if (CheckSavetMacErr(PbufNew(outName.length, &i))) {
-				if (CFStringGetBytes(DiskName,
-					CFRangeMake(0, outName.length),
-					kCFStringEncodingMacRoman,
-					'?', false,
-					PbufDat[i],
-					outName.length,
-					NULL) != outName.length)
-				{
-					err = mnvm_miscErr;
-				}
-				if (mnvm_noErr != err) {
-					PbufDispose(i);
-				} else {
-					*r = i;
-				}
-			}
-			CFRelease(DiskName);
-		}
-	}
-
-	return err;
-}
-#endif
-
-LOCALFUNC tMacErr Sony_Insert0(SInt16 refnum, blnr locked)
+LOCALFUNC blnr Sony_Insert0(FILE *refnum, blnr locked,
+	char *drivepath)
 {
 	tDrive Drive_No;
 
 	if (! FirstFreeDisk(&Drive_No)) {
-		(void) FSCloseFork(refnum);
-		return mnvm_tmfoErr;
+		fclose(refnum);
+		MacMsg(kStrTooManyImagesTitle, kStrTooManyImagesMessage, falseblnr);
+		return falseblnr;
 	} else {
+		/* printf("Sony_Insert0 %d\n", (int)Drive_No); */
 		Drives[Drive_No] = refnum;
 		DiskInsertNotify(Drive_No, locked);
-		return mnvm_noErr;
+
+		return trueblnr;
 	}
 }
 
-LOCALPROC ReportStandardOpenDiskError(tMacErr err)
+LOCALFUNC blnr Sony_Insert1(char *drivepath, blnr silentfail)
 {
-	if (mnvm_noErr != err) {
-		if (mnvm_tmfoErr == err) {
-			MacMsg(kStrTooManyImagesTitle, kStrTooManyImagesMessage, falseblnr);
-		} else if (mnvm_opWrErr == err) {
-			MacMsg(kStrImageInUseTitle, kStrImageInUseMessage, falseblnr);
-		} else {
+	blnr locked = falseblnr;
+	/* printf("Sony_Insert1 %s\n", drivepath); */
+	FILE *refnum = fopen(drivepath, "rb+");
+	if (NULL == refnum) {
+		locked = trueblnr;
+		refnum = fopen(drivepath, "rb");
+	}
+	if (NULL == refnum) {
+		if (! silentfail) {
 			MacMsg(kStrOpenFailTitle, kStrOpenFailMessage, falseblnr);
 		}
-	}
-}
-
-LOCALFUNC tMacErr InsertADiskFromFSRef(FSRef *theRef)
-{
-	tMacErr err;
-	HFSUniStr255 forkName;
-	SInt16 refnum;
-	blnr locked = falseblnr;
-
-	if (CheckSaveMacErr(FSGetDataForkName(&forkName))) {
-		err = To_tMacErr(FSOpenFork(theRef, forkName.length,
-			forkName.unicode, fsRdWrPerm, &refnum));
-		switch (err) {
-			case mnvm_permErr:
-			case mnvm_wrPermErr:
-			case mnvm_afpAccessDenied:
-				locked = trueblnr;
-				err = To_tMacErr(FSOpenFork(theRef, forkName.length,
-					forkName.unicode, fsRdPerm, &refnum));
-				break;
-			default:
-				break;
-		}
-		if (mnvm_noErr == err) {
-			err = Sony_Insert0(refnum, locked);
-		}
-	}
-
-	return err;
-}
-
-LOCALFUNC tMacErr InsertDisksFromDocList(AEDescList *docList)
-{
-	tMacErr err = mnvm_noErr;
-	long itemsInList;
-	long index;
-	AEKeyword keyword;
-	DescType typeCode;
-	FSRef theRef;
-	Size actualSize;
-
-	if (CheckSaveMacErr(AECountItems(docList, &itemsInList))) {
-		for (index = 1; index <= itemsInList; ++index) {
-			if (CheckSaveMacErr(AEGetNthPtr(docList, index, typeFSRef, &keyword, &typeCode,
-								(Ptr)&theRef, sizeof(FSRef), &actualSize)))
-			if (CheckSavetMacErr(InsertADiskFromFSRef(&theRef)))
-			{
-			}
-			if (mnvm_noErr != err) {
-				goto label_fail;
-			}
-		}
-	}
-
-label_fail:
-	return err;
-}
-
-LOCALFUNC tMacErr MyMakeFSRefUniChar(FSRef *ParentRef,
-	UniCharCount fileNameLength, const UniChar *fileName,
-	blnr *isFolder, FSRef *ChildRef)
-{
-	tMacErr err;
-	Boolean isFolder0;
-	Boolean isAlias;
-
-	if (CheckSaveMacErr(FSMakeFSRefUnicode(ParentRef,
-		fileNameLength, fileName, kTextEncodingUnknown,
-		ChildRef)))
-	if (CheckSaveMacErr(FSResolveAliasFile(ChildRef,
-		TRUE, &isFolder0, &isAlias)))
-	{
-		*isFolder = isFolder0;
-	}
-
-	return err;
-}
-
-LOCALFUNC tMacErr MyMakeFSRefC(FSRef *ParentRef, char *fileName,
-	blnr *isFolder, FSRef *ChildRef)
-{
-	int L;
-	UniChar x[ClStrMaxLength];
-
-	UniCharStrFromSubstCStr(&L, x, fileName, falseblnr);
-	return MyMakeFSRefUniChar(ParentRef, L, x,
-		isFolder, ChildRef);
-}
-
-LOCALFUNC tMacErr InsertADiskFromNameEtc(FSRef *ParentRef, char *fileName)
-{
-	tMacErr err;
-	blnr isFolder;
-	FSRef ChildRef;
-
-	if (CheckSavetMacErr(MyMakeFSRefC(ParentRef, fileName, &isFolder, &ChildRef))) {
-		if (isFolder) {
-			err = mnvm_miscErr;
-		} else {
-			if (CheckSavetMacErr(InsertADiskFromFSRef(&ChildRef))) {
-				/* ok */
-			}
-		}
-	}
-
-	return err;
-}
-
-pascal Boolean NavigationFilterProc(AEDesc* theItem, void* info, void* NavCallBackUserData, NavFilterModes theNavFilterModes);
-pascal Boolean NavigationFilterProc(AEDesc* theItem, void* info, void* NavCallBackUserData, NavFilterModes theNavFilterModes)
-{
-	/* NavFileOrFolderInfo* theInfo = (NavFileOrFolderInfo*)info; */
-	UnusedParam(theItem);
-	UnusedParam(info);
-	UnusedParam(theNavFilterModes);
-	UnusedParam(NavCallBackUserData);
-
-	return true; /* display all items */
-}
-
-
-pascal void NavigationEventProc(NavEventCallbackMessage callBackSelector, NavCBRecPtr callBackParms, void *NavCallBackUserData);
-pascal void NavigationEventProc(NavEventCallbackMessage callBackSelector, NavCBRecPtr callBackParms, void *NavCallBackUserData)
-{
-	UnusedParam(NavCallBackUserData);
-
-	switch (callBackSelector) {
-		case kNavCBEvent: /* probably not needed in os x */
-			switch (callBackParms->eventData.eventDataParms.event->what) {
-				case updateEvt:
-					{
-						WindowPtr which = (WindowPtr)callBackParms->eventData.eventDataParms.event->message;
-
-						BeginUpdate(which);
-
-						if (which == gMyMainWindow) {
-							Update_Screen();
-						}
-
-						EndUpdate(which);
-					}
-					break;
-			}
-			break;
-#if 0
-		case kNavCBUserAction:
-			{
-				NavUserAction userAction = NavDialogGetUserAction(
-					callBackParms->context);
-				switch (userAction) {
-					case kNavUserActionOpen: {
-						/* got something to open */
-						break;
-					}
-				}
-			}
-			break;
-		case kNavCBTerminate:
-			break;
-#endif
-	}
-}
-
-LOCALPROC InsertADisk0(void)
-{
-	NavDialogRef theOpenDialog;
-	NavDialogCreationOptions dialogOptions;
-	NavReplyRecord theReply;
-	NavTypeListHandle openList = NULL;
-	NavEventUPP gEventProc = NewNavEventUPP(NavigationEventProc);
-	NavObjectFilterUPP filterUPP = NewNavObjectFilterUPP(NavigationFilterProc);
-
-	if (noErr == NavGetDefaultDialogCreationOptions(&dialogOptions)) {
-		dialogOptions.modality = kWindowModalityAppModal;
-		dialogOptions.optionFlags |= kNavDontAutoTranslate;
-		dialogOptions.optionFlags &= ~ kNavAllowPreviews;
-		if (noErr == NavCreateGetFileDialog(&dialogOptions,
-			(NavTypeListHandle)openList,
-			gEventProc, NULL,
-			filterUPP, NULL, &theOpenDialog))
-		{
-			MyBeginDialog();
-			(void) NavDialogRun(theOpenDialog);
-			MyEndDialog();
-			if (noErr == NavDialogGetReply(theOpenDialog,
-				&theReply))
-			{
-				if (theReply.validRecord) {
-					ReportStandardOpenDiskError(InsertDisksFromDocList(&theReply.selection));
-				}
-				(void) NavDisposeReply(&theReply);
-			}
-			NavDialogDispose(theOpenDialog);
-		}
-	}
-
-	DisposeNavEventUPP(gEventProc);
-	DisposeNavObjectFilterUPP(filterUPP);
-}
-
-#if IncludeSonyNew
-LOCALFUNC tMacErr WriteZero(SInt16 refnum, ui5b L)
-{
-#define ZeroBufferSize 2048
-	tMacErr err = mnvm_noErr;
-	ui5b i;
-	ui3b buffer[ZeroBufferSize];
-	ByteCount actualCount;
-	ui5b offset = 0;
-
-	memset(&buffer, 0, ZeroBufferSize);
-
-	while (L > 0) {
-		i = (L > ZeroBufferSize) ? ZeroBufferSize : L;
-		if (! CheckSaveMacErr(FSWriteFork(refnum,
-			fsFromStart,
-			offset,
-			i,
-			buffer,
-			&actualCount)))
-		{
-			goto label_fail;
-		}
-		L -= i;
-		offset += i;
-	}
-
-label_fail:
-	return err;
-}
-#endif
-
-#if IncludeSonyNew
-LOCALFUNC tMacErr MyCreateFileCFStringRef(FSRef *saveFileParent, CFStringRef saveFileName, FSRef *NewRef)
-{
-	tMacErr err;
-	UniChar buffer[255];
-
-	CFIndex len = CFStringGetLength(saveFileName);
-
-	if (len > 255) {
-		len = 255;
-	}
-
-	CFStringGetCharacters(saveFileName, CFRangeMake(0, len), buffer);
-
-	err = To_tMacErr(FSMakeFSRefUnicode(saveFileParent, len,
-		buffer, kTextEncodingUnknown, NewRef));
-	if (mnvm_fnfErr == err) { /* file is not there yet - create it */
-		err = To_tMacErr(FSCreateFileUnicode(saveFileParent,
-			len, buffer, 0, NULL, NewRef, NULL));
-	}
-
-	return err;
-}
-#endif
-
-#if IncludeSonyNew
-LOCALFUNC tMacErr MakeNewDisk0(FSRef *saveFileParent, CFStringRef saveFileName, ui5b L)
-{
-	tMacErr err;
-	FSRef NewRef;
-	HFSUniStr255 forkName;
-	SInt16 refnum;
-
-	if (CheckSavetMacErr(MyCreateFileCFStringRef(saveFileParent, saveFileName, &NewRef))) {
-		if (CheckSaveMacErr(FSGetDataForkName(&forkName)))
-		if (CheckSaveMacErr(FSOpenFork(&NewRef, forkName.length,
-			forkName.unicode, fsRdWrPerm, &refnum)))
-		{
-			SInt64 forkSize = L;
-			if (CheckSaveMacErr(FSSetForkSize(refnum, fsFromStart, forkSize)))
-			/*
-				zero out fork. It looks like this is already done,
-				but documentation says this isn't guaranteed.
-			*/
-			if (CheckSavetMacErr(WriteZero(refnum, L)))
-			{
-				err = Sony_Insert0(refnum, falseblnr);
-				refnum = NotAfileRef;
-			}
-			if (NotAfileRef != refnum) {
-				(void) FSCloseFork(refnum);
-			}
-		}
-		if (mnvm_noErr != err) {
-			(void) FSDeleteObject(&NewRef);
-		}
-	}
-
-	return err;
-}
-#endif
-
-#if IncludeSonyNameNew
-LOCALFUNC CFStringRef PbufToCFString(tPbuf i)
-{
-	return CFStringCreateWithBytes(NULL,
-		(UInt8 *)PbufDat[i], PbufSize[i],
-		kCFStringEncodingMacRoman, false);
-}
-#endif
-
-#if IncludeSonyNew
-LOCALPROC MakeNewDisk(ui5b L, CFStringRef NewDiskName)
-{
-	NavDialogRef theSaveDialog;
-	NavDialogCreationOptions dialogOptions;
-	NavReplyRecord theReply;
-	NavEventUPP gEventProc = NewNavEventUPP(NavigationEventProc);
-
-	if (noErr == NavGetDefaultDialogCreationOptions(&dialogOptions)) {
-		dialogOptions.modality = kWindowModalityAppModal;
-		dialogOptions.saveFileName = NewDiskName;
-		if (noErr == NavCreatePutFileDialog(&dialogOptions,
-			'TEXT', 'MPS ',
-			gEventProc, NULL,
-			&theSaveDialog))
-		{
-			MyBeginDialog();
-			(void) NavDialogRun(theSaveDialog);
-			MyEndDialog();
-			if (noErr == NavDialogGetReply(theSaveDialog,
-				&theReply))
-			{
-				if (theReply.validRecord) {
-					long itemsInList;
-					AEKeyword keyword;
-					DescType typeCode;
-					FSRef theRef;
-					Size actualSize;
-
-					if (noErr == AECountItems(&theReply.selection, &itemsInList)) {
-						if (itemsInList == 1) {
-							if (noErr == AEGetNthPtr(&theReply.selection, 1, typeFSRef, &keyword, &typeCode,
-												(Ptr)&theRef, sizeof(FSRef), &actualSize))
-							{
-								ReportStandardOpenDiskError(MakeNewDisk0(&theRef, theReply.saveFileName, L));
-							}
-						}
-					}
-				}
-				(void) NavDisposeReply(&theReply);
-			}
-			NavDialogDispose(theSaveDialog);
-		}
-	}
-
-	DisposeNavEventUPP(gEventProc);
-
-	if (NewDiskName != NULL) {
-		CFRelease(NewDiskName);
-	}
-}
-#endif
-
-LOCALFUNC tMacErr FindNamedChildRef(FSRef *ParentRef,
-	char *ChildName, FSRef *ChildRef)
-{
-	tMacErr err;
-	blnr isFolder;
-
-	if (CheckSavetMacErr(MyMakeFSRefC(ParentRef, ChildName, &isFolder, ChildRef))) {
-		if (! isFolder) {
-			err = mnvm_miscErr;
-		}
-	}
-
-	return err;
-}
-
-LOCALVAR FSRef MyDatDirRef;
-
-LOCALVAR CFStringRef MyAppName = NULL;
-
-LOCALPROC UnInitMyApplInfo(void)
-{
-	if (MyAppName != NULL) {
-		CFRelease(MyAppName);
-	}
-}
-
-LOCALFUNC blnr InitMyApplInfo(void)
-{
-	ProcessSerialNumber currentProcess = {0, kCurrentProcess};
-	FSRef fsRef;
-	FSRef parentRef;
-
-	if (noErr == GetProcessBundleLocation(&currentProcess,
-		&fsRef))
-	if (noErr == FSGetCatalogInfo(&fsRef, kFSCatInfoNone,
-		NULL, NULL, NULL, &parentRef))
-	{
-		FSRef ContentsRef;
-		FSRef DatRef;
-
-		MyDatDirRef = parentRef;
-		if (mnvm_noErr == FindNamedChildRef(&fsRef, "Contents", &ContentsRef))
-		if (mnvm_noErr == FindNamedChildRef(&ContentsRef, "mnvm_dat", &DatRef))
-		{
-			MyDatDirRef = DatRef;
-		}
-
-		if (HaveMyLSCopyDisplayNameForRef()) {
-			if (noErr == MyLSCopyDisplayNameForRef(&fsRef, &MyAppName)) {
-				return trueblnr;
-			}
-		}
-
-		if (noErr == CopyProcessName(&currentProcess, &MyAppName)) {
-			return trueblnr;
-		}
+	} else {
+		return Sony_Insert0(refnum, locked, drivepath);
 	}
 	return falseblnr;
 }
 
-LOCALFUNC tMacErr OpenNamedFileInFolderRef(FSRef *ParentRef,
-	char *fileName, short *refnum)
-{
-	tMacErr err;
-	blnr isFolder;
-	FSRef ChildRef;
-	HFSUniStr255 forkName;
-
-	if (CheckSavetMacErr(MyMakeFSRefC(ParentRef, fileName,
-		&isFolder, &ChildRef)))
-	if (CheckSaveMacErr(FSGetDataForkName(&forkName)))
-	if (CheckSaveMacErr(FSOpenFork(&ChildRef, forkName.length,
-		forkName.unicode, fsRdPerm, refnum)))
-	{
-		/* ok */
-	}
-
-	return err;
-}
-
-LOCALFUNC tMacErr OpenMacRom(SInt16 *refnum)
-{
-	tMacErr err;
-
-	err = OpenNamedFileInFolderRef(&MyDatDirRef, RomFileName, refnum);
-	if (mnvm_fnfErr == err) {
-		FSRef PrefRef;
-		FSRef GryphelRef;
-		FSRef ROMsRef;
-
-		if (CheckSaveMacErr(FSFindFolder(kUserDomain, kPreferencesFolderType,
-			kDontCreateFolder, &PrefRef)))
-		if (CheckSavetMacErr(FindNamedChildRef(&PrefRef, "Gryphel", &GryphelRef)))
-		if (CheckSavetMacErr(FindNamedChildRef(&GryphelRef, "mnvm_rom", &ROMsRef)))
-		if (CheckSavetMacErr(OpenNamedFileInFolderRef(&ROMsRef, RomFileName,
-				refnum)))
-		{
-			/* ok */
-		}
-	}
-
-	return err;
-}
-
-LOCALFUNC blnr LoadMacRom(void)
-{
-	tMacErr err;
-	SInt16 refnum;
-
-	if (CheckSavetMacErr(OpenMacRom(&refnum))) {
-		ByteCount actualCount;
-		if (CheckSaveMacErr(FSReadFork(refnum, fsFromStart, 0,
-			kTrueROM_Size, ROM, &actualCount)))
-		{
-		}
-		(void) FSCloseFork(refnum);
-	}
-
-	if (mnvm_noErr != err) {
-		if (mnvm_fnfErr == err) {
-			MacMsg(kStrNoROMTitle, kStrNoROMMessage, trueblnr);
-		} else if (mnvm_eofErr == err) {
-			MacMsg(kStrShortROMTitle, kStrShortROMMessage, trueblnr);
-		} else {
-			MacMsg(kStrNoReadROMTitle, kStrNoReadROMMessage, trueblnr);
-		}
-
-		SpeedStopped = trueblnr;
-	}
-
-	return trueblnr; /* keep launching Mini vMac, regardless */
-}
-
 LOCALFUNC blnr LoadInitialImages(void)
 {
-	tMacErr err = mnvm_noErr;
 	int n = NumDrives > 9 ? 9 : NumDrives;
 	int i;
-	char s[16] = "disk?.dsk";
+	char s[] = "disk?.dsk";
 
 	for (i = 1; i <= n; ++i) {
 		s[4] = '0' + i;
-		if (! CheckSavetMacErr(InsertADiskFromNameEtc(&MyDatDirRef, s))) {
-			if (mnvm_fnfErr != err) {
-				ReportStandardOpenDiskError(err);
-			}
+		if (! Sony_Insert1(s, trueblnr)) {
 			/* stop on first error (including file not found) */
-			goto label_done;
+			return trueblnr;
 		}
 	}
 
-label_done:
 	return trueblnr;
 }
 
-#if UseActvCode
+/*--- ROM ---*/
 
-#define ActvCodeFileName "act_1"
+LOCALVAR char *rom_path = NULL;
 
-LOCALFUNC tMacErr OpenActvCodeFile(SInt16 *refnum)
+LOCALFUNC blnr LoadMacRom(void)
 {
-	tMacErr err;
-	FSRef PrefRef;
-	FSRef GryphelRef;
-	FSRef ActRef;
+	FILE *ROM_File;
+	int File_Size;
 
-	if (CheckSaveMacErr(FSFindFolder(kUserDomain, kPreferencesFolderType,
-		kDontCreateFolder, &PrefRef)))
-	if (CheckSavetMacErr(FindNamedChildRef(&PrefRef, "Gryphel", &GryphelRef)))
-	if (CheckSavetMacErr(FindNamedChildRef(&GryphelRef, "mnvm_act", &ActRef)))
-	if (CheckSavetMacErr(OpenNamedFileInFolderRef(&ActRef, ActvCodeFileName,
-			refnum)))
-	{
-		/* ok */
+	if (NULL == rom_path) {
+		rom_path = RomFileName;
 	}
-
-	return err;
-}
-
-LOCALFUNC tMacErr ActvCodeFileLoad(ui3p p)
-{
-	tMacErr err;
-	SInt16 refnum;
-
-	if (CheckSavetMacErr(OpenActvCodeFile(&refnum))) {
-		ByteCount actualCount;
-		err = To_tMacErr(FSReadFork(refnum, fsFromStart, 0,
-			ActvCodeFileLen, p, &actualCount));
-		(void) FSCloseFork(refnum);
-	}
-
-	return err;
-}
-
-LOCALFUNC tMacErr FindOrMakeNamedChildRef(FSRef *ParentRef,
-	char *ChildName, FSRef *ChildRef)
-{
-	tMacErr err;
-	blnr isFolder;
-	int L;
-	UniChar x[ClStrMaxLength];
-
-	UniCharStrFromSubstCStr(&L, x, ChildName, falseblnr);
-	if (CheckSavetMacErr(MyMakeFSRefUniChar(ParentRef, L, x,
-		&isFolder, ChildRef)))
-	{
-		if (! isFolder) {
-			err = mnvm_miscErr;
-		}
-	}
-	if (mnvm_fnfErr == err) {
-		err = To_tMacErr(FSCreateDirectoryUnicode(ParentRef, L, x, kFSCatInfoNone, NULL,
-			ChildRef, NULL, NULL));
-	}
-
-	return err;
-}
-
-LOCALFUNC tMacErr OpenWriteNamedFileInFolderRef(FSRef *ParentRef,
-	char *fileName, short *refnum)
-{
-	tMacErr err;
-	blnr isFolder;
-	FSRef ChildRef;
-	HFSUniStr255 forkName;
-	int L;
-	UniChar x[ClStrMaxLength];
-
-	UniCharStrFromSubstCStr(&L, x, fileName, falseblnr);
-	err = MyMakeFSRefUniChar(ParentRef, L, x, &isFolder, &ChildRef);
-	if (mnvm_fnfErr == err) {
-		err = To_tMacErr(FSCreateFileUnicode(ParentRef, L, x, 0, NULL, &ChildRef, NULL));
-	}
-	if (mnvm_noErr == err) {
-		if (CheckSaveMacErr(FSGetDataForkName(&forkName)))
-		if (CheckSaveMacErr(FSOpenFork(&ChildRef, forkName.length,
-			forkName.unicode, fsRdWrPerm, refnum)))
-		{
-			/* ok */
-		}
-	}
-
-	return err;
-}
-
-LOCALFUNC tMacErr ActvCodeFileSave(ui3p p)
-{
-	tMacErr err;
-	SInt16 refnum;
-	FSRef PrefRef;
-	FSRef GryphelRef;
-	FSRef ActRef;
-	ByteCount count = ActvCodeFileLen;
-
-	if (CheckSaveMacErr(FSFindFolder(kUserDomain, kPreferencesFolderType,
-		kDontCreateFolder, &PrefRef)))
-	if (CheckSavetMacErr(FindOrMakeNamedChildRef(&PrefRef, "Gryphel", &GryphelRef)))
-	if (CheckSavetMacErr(FindOrMakeNamedChildRef(&GryphelRef, "mnvm_act", &ActRef)))
-	if (CheckSavetMacErr(OpenWriteNamedFileInFolderRef(&ActRef, ActvCodeFileName,
-		&refnum)))
-	{
-		ByteCount actualCount;
-		err = To_tMacErr(FSWriteFork(refnum, fsFromStart, 0,
-			count, p, &actualCount));
-		(void) FSCloseFork(refnum);
-	}
-
-	return err;
-}
-
-#endif /* UseActvCode */
-
-#define openOnly 1
-#define openPrint 2
-
-LOCALFUNC blnr GotRequiredParams(AppleEvent *theAppleEvent)
-{
-	DescType typeCode;
-	Size actualSize;
-	OSErr theErr;
-
-	theErr = AEGetAttributePtr(theAppleEvent, keyMissedKeywordAttr,
-				typeWildCard, &typeCode, NULL, 0, &actualSize);
-	if (errAEDescNotFound == theErr) { /* No more required params. */
-		return trueblnr;
-	} else if (noErr == theErr) { /* More required params! */
-		return /* CheckSysCode(errAEEventNotHandled) */ falseblnr;
-	} else { /* Unexpected Error! */
-		return /* CheckSysCode(theErr) */ falseblnr;
-	}
-}
-
-LOCALFUNC blnr GotRequiredParams0(AppleEvent *theAppleEvent)
-{
-	DescType typeCode;
-	Size actualSize;
-	OSErr theErr;
-
-	theErr = AEGetAttributePtr(theAppleEvent, keyMissedKeywordAttr,
-				typeWildCard, &typeCode, NULL, 0, &actualSize);
-	if (errAEDescNotFound == theErr) { /* No more required params. */
-		return trueblnr;
-	} else if (noErr == theErr) { /* More required params! */
-		return trueblnr; /* errAEEventNotHandled; */ /*^*/
-	} else { /* Unexpected Error! */
-		return /* CheckSysCode(theErr) */ falseblnr;
-	}
-}
-
-FORWARDPROC PostIfStoppedLowPriorityEvent(void);
-
-/* call back */ static pascal OSErr OpenOrPrintFiles(AppleEvent *theAppleEvent, AppleEvent *reply, long aRefCon)
-{
-	/*Adapted from IM VI: AppleEvent Manager: Handling Required AppleEvents*/
-	AEDescList docList;
-
-	UnusedParam(reply);
-	UnusedParam(aRefCon);
-	/* put the direct parameter (a list of descriptors) into docList */
-	if (noErr == (AEGetParamDesc(theAppleEvent, keyDirectObject, typeAEList, &docList))) {
-		if (GotRequiredParams0(theAppleEvent)) { /* Check for missing required parameters */
-			/* printIt = (openPrint == aRefCon) */
-			ReportStandardOpenDiskError(InsertDisksFromDocList(&docList));
-		}
-		/* vCheckSysCode */ (void) (AEDisposeDesc(&docList));
-	}
-
-	PostIfStoppedLowPriorityEvent();
-
-	return /* GetASysResultCode() */ 0;
-}
-
-/* call back */ static pascal OSErr DoOpenEvent(AppleEvent *theAppleEvent, AppleEvent *reply, long aRefCon)
-/* This is the alternative to getting an open document event on startup. */
-{
-	UnusedParam(reply);
-	UnusedParam(aRefCon);
-	if (GotRequiredParams0(theAppleEvent)) {
-	}
-	return /* GetASysResultCode() */ 0; /* Make sure there are no additional "required" parameters. */
-}
-
-
-/* call back */ static pascal OSErr DoQuitEvent(AppleEvent *theAppleEvent, AppleEvent *reply, long aRefCon)
-{
-	UnusedParam(reply);
-	UnusedParam(aRefCon);
-	if (GotRequiredParams(theAppleEvent)) {
-		RequestMacOff = trueblnr;
-	}
-
-	PostIfStoppedLowPriorityEvent();
-
-	return /* GetASysResultCode() */ 0;
-}
-
-LOCALFUNC blnr MyInstallEventHandler(AEEventClass theAEEventClass, AEEventID theAEEventID,
-						ProcPtr p, long handlerRefcon, blnr isSysHandler)
-{
-	return noErr == (AEInstallEventHandler(theAEEventClass, theAEEventID,
-			NewAEEventHandlerUPP((AEEventHandlerProcPtr)p),
-			handlerRefcon, isSysHandler));
-}
-
-LOCALPROC InstallAppleEventHandlers(void)
-{
-	if (noErr == AESetInteractionAllowed(kAEInteractWithLocal))
-	if (MyInstallEventHandler(kCoreEventClass, kAEOpenApplication, (ProcPtr)DoOpenEvent, 0, falseblnr))
-	if (MyInstallEventHandler(kCoreEventClass, kAEOpenDocuments, (ProcPtr)OpenOrPrintFiles, openOnly, falseblnr))
-	if (MyInstallEventHandler(kCoreEventClass, kAEPrintDocuments, (ProcPtr)OpenOrPrintFiles, openPrint, falseblnr))
-	if (MyInstallEventHandler(kCoreEventClass, kAEQuitApplication, (ProcPtr)DoQuitEvent, 0, falseblnr))
-	{
-	}
-}
-
-static pascal OSErr GlobalTrackingHandler(DragTrackingMessage message, WindowRef theWindow, void *handlerRefCon, DragReference theDragRef)
-{
-	RgnHandle hilightRgn;
-	Rect Bounds;
-
-	UnusedParam(theWindow);
-	UnusedParam(handlerRefCon);
-	switch(message) {
-		case kDragTrackingEnterWindow:
-			hilightRgn = NewRgn();
-			if (hilightRgn != NULL) {
-				SetScrnRectFromCoords(&Bounds, 0, 0, vMacScreenHeight, vMacScreenWidth);
-				RectRgn(hilightRgn, &Bounds);
-				ShowDragHilite(theDragRef, hilightRgn, true);
-				DisposeRgn(hilightRgn);
-			}
-			break;
-		case kDragTrackingLeaveWindow:
-			HideDragHilite(theDragRef);
-			break;
-	}
-
-	return noErr;
-}
-
-LOCALFUNC tMacErr InsertADiskOrAliasFromFSRef(FSRef *theRef)
-{
-	tMacErr err;
-	Boolean isFolder;
-	Boolean isAlias;
-
-	if (CheckSaveMacErr(FSResolveAliasFile(theRef, true, &isFolder, &isAlias))) {
-		err = InsertADiskFromFSRef(theRef);
-	}
-
-	return err;
-}
-
-LOCALFUNC tMacErr InsertADiskOrAliasFromSpec(FSSpec *spec)
-{
-	tMacErr err;
-	FSRef newRef;
-
-	if (CheckSaveMacErr(FSpMakeFSRef(spec, &newRef)))
-	if (CheckSavetMacErr(InsertADiskOrAliasFromFSRef(&newRef)))
-	{
-		/* ok */
-	}
-
-	return err;
-}
-
-static pascal OSErr GlobalReceiveHandler(WindowRef pWindow, void *handlerRefCon, DragReference theDragRef)
-{
-	unsigned short items;
-	unsigned short index;
-	ItemReference theItem;
-	Size SentSize;
-	HFSFlavor r;
-
-	UnusedParam(pWindow);
-	UnusedParam(handlerRefCon);
-
-	if (noErr == CountDragItems(theDragRef, &items)) {
-		for (index = 1; index <= items; ++index) {
-			if (noErr == GetDragItemReferenceNumber(theDragRef, index, &theItem))
-			if (noErr == GetFlavorDataSize(theDragRef, theItem, flavorTypeHFS, &SentSize))
-				/*
-					On very old macs SentSize might only be big enough to hold the actual
-					file name. Have not seen this in OS X, but still leave the check
-					as '<=' instead of '=='.
-				*/
-			if (SentSize <= sizeof(HFSFlavor))
-			if (noErr == GetFlavorData(theDragRef, theItem, flavorTypeHFS,
-				(Ptr)&r, &SentSize, 0))
-			{
-				ReportStandardOpenDiskError(InsertADiskOrAliasFromSpec(&r.fileSpec));
-			}
-		}
-
-		if (gTrueBackgroundFlag) {
-			ProcessSerialNumber currentProcess = {0, kCurrentProcess};
-
-			(void) SetFrontProcess(&currentProcess);
-
-			WantCmdOptOnReconnect = trueblnr;
-		}
-	}
-
-	PostIfStoppedLowPriorityEvent();
-
-	return noErr;
-}
-
-LOCALVAR DragTrackingHandlerUPP gGlobalTrackingHandler = NULL;
-LOCALVAR DragReceiveHandlerUPP gGlobalReceiveHandler = NULL;
-
-LOCALPROC UnPrepareForDragging(void)
-{
-	if (NULL != gGlobalReceiveHandler) {
-		RemoveReceiveHandler(gGlobalReceiveHandler, gMyMainWindow);
-		DisposeDragReceiveHandlerUPP(gGlobalReceiveHandler);
-		gGlobalReceiveHandler = NULL;
-	}
-	if (NULL != gGlobalTrackingHandler) {
-		RemoveTrackingHandler(gGlobalTrackingHandler, gMyMainWindow);
-		DisposeDragTrackingHandlerUPP(gGlobalTrackingHandler);
-		gGlobalTrackingHandler = NULL;
-	}
-}
-
-LOCALFUNC blnr PrepareForDragging(void)
-{
-	blnr IsOk = falseblnr;
-
-	gGlobalTrackingHandler = NewDragTrackingHandlerUPP(GlobalTrackingHandler);
-	if (gGlobalTrackingHandler != NULL) {
-		gGlobalReceiveHandler = NewDragReceiveHandlerUPP(GlobalReceiveHandler);
-		if (gGlobalReceiveHandler != NULL) {
-			if (noErr == InstallTrackingHandler(gGlobalTrackingHandler, gMyMainWindow, nil)) {
-				if (noErr == InstallReceiveHandler(gGlobalReceiveHandler, gMyMainWindow, nil)) {
-					IsOk = trueblnr;
-				}
-			}
-		}
-	}
-
-	return IsOk;
-}
-
-LOCALVAR EventRef EventForMyLowPriority = nil;
-
-LOCALPROC PostMyLowPriorityTasksEvent(void)
-{
-	EventQueueRef mq = GetMainEventQueue();
-
-	if (IsEventInQueue(mq, EventForMyLowPriority)) {
-		(void) RemoveEventFromQueue(mq, EventForMyLowPriority);
-	}
-	(void) SetEventTime(EventForMyLowPriority, GetCurrentEventTime());
-
-	if (noErr == PostEventToQueue(mq,
-		EventForMyLowPriority, kEventPriorityLow))
-	{
-	}
-}
-
-LOCALPROC PostIfStoppedLowPriorityEvent(void)
-{
-	if (CurSpeedStopped) {
-		PostMyLowPriorityTasksEvent();
-	}
-}
-
-LOCALPROC HandleEventLocation(EventRef theEvent)
-{
-	Point NewMousePos;
-
-	if (gBackgroundFlag || ADialogIsUp) {
-		return;
-	}
-
-	if (noErr == GetEventParameter(theEvent,
-		kEventParamMouseLocation,
-		typeQDPoint,
-		NULL,
-		sizeof(NewMousePos),
-		NULL,
-		&NewMousePos))
-	{
-		MousePositionNotify(NewMousePos);
-	}
-}
-
-LOCALPROC HandleEventModifiers(EventRef theEvent)
-{
-	UInt32 theModifiers;
-
-	GetEventParameter(theEvent, kEventParamKeyModifiers, typeUInt32, NULL, sizeof(typeUInt32), NULL, &theModifiers);
-
-	MyUpdateKeyboardModifiers(theModifiers);
-}
-
-LOCALVAR blnr IsOurMouseMove;
-
-static pascal OSStatus windowEventHandler(EventHandlerCallRef nextHandler,
-	EventRef theEvent,
-	void* userData)
-{
-	OSStatus result = eventNotHandledErr;
-	UInt32 eventClass = GetEventClass(theEvent);
-	UInt32 eventKind = GetEventKind(theEvent);
-
-	UnusedParam(nextHandler);
-	UnusedParam(userData);
-	switch(eventClass) {
-		case kEventClassWindow:
-			switch(eventKind) {
-				case kEventWindowClose:
-					RequestMacOff = trueblnr;
-					result = noErr;
-					PostIfStoppedLowPriorityEvent();
-					break;
-				case kEventWindowDrawContent:
-					Update_Screen();
-					result = noErr;
-					break;
-				case kEventWindowClickContentRgn:
-					MouseIsOutside = falseblnr;
-					HandleEventLocation(theEvent);
-					HandleEventModifiers(theEvent);
-					MyMouseButtonSet(trueblnr);
-					result = noErr;
-					break;
-			}
-			break;
-		case kEventClassMouse:
-			switch(eventKind) {
-				case kEventMouseMoved:
-				case kEventMouseDragged:
-					MouseIsOutside = falseblnr;
-#if 0 /* don't bother, CheckMouseState will take care of it, better */
-					HandleEventLocation(theEvent);
-					HandleEventModifiers(theEvent);
-#endif
-					IsOurMouseMove = trueblnr;
-					result = noErr;
-					break;
-			}
-			break;
-	}
-
-	return result;
-}
-
-#if EnableScalingBuff
-#define ScaleBuffSzMult (MyWindowScale * MyWindowScale)
-#endif
-
-LOCALFUNC blnr MyCreateNewWindow(Rect *Bounds, WindowPtr *theWindow)
-{
-	WindowPtr ResultWin;
-	blnr IsOk = falseblnr;
-
-	if (noErr == CreateNewWindow(
-#if EnableFullScreen && 1
-		/*
-			appears not to work properly with aglSetWindowRef
-			at least in OS X 10.5.5
-			also doesn't seem to be needed. maybe dates from when
-			didn't cover all screens in full screen mode.
-		*/
-		/*
-			Oops, no, kDocumentWindowClass doesn't seem to
-			work quite right if made immediately after
-			launch, title bar gets moved onscreen.
-			At least in Intel 10.5.7, doesn't happen in PowerPC 10.4.11.
-			Oddly, this problem doesn't happen if icon
-			already in dock before launch, but perhaps
-			that is just a timing issue.
-			So use kPlainWindowClass after all.
-		*/
-		UseFullScreen ? kPlainWindowClass :
-#endif
-			kDocumentWindowClass,
-#if EnableFullScreen
-		UseFullScreen ? /* kWindowStandardHandlerAttribute */ 0 :
-#endif
-			kWindowCloseBoxAttribute
-				| kWindowCollapseBoxAttribute,
-		Bounds, &ResultWin
-	))
-	{
-#if EnableFullScreen
-		if (! UseFullScreen)
-#endif
-		{
-			SetWindowTitleWithCFString(ResultWin,
-				MyAppName /* CFSTR("Mini vMac") */);
-		}
-		InstallStandardEventHandler(GetWindowEventTarget(ResultWin));
-		{
-			static const EventTypeSpec windowEvents[] =
-				{
-					{kEventClassWindow, kEventWindowClose},
-					{kEventClassWindow, kEventWindowDrawContent},
-					{kEventClassWindow, kEventWindowClickContentRgn},
-					{kEventClassMouse, kEventMouseMoved},
-					{kEventClassMouse, kEventMouseDragged}
-				};
-			InstallWindowEventHandler(ResultWin,
-				NewEventHandlerUPP(windowEventHandler),
-				GetEventTypeCount(windowEvents),
-				windowEvents, 0, NULL);
-		}
-
-		*theWindow = ResultWin;
-
-		IsOk = trueblnr;
-	}
-
-	return IsOk;
-}
-
-LOCALPROC ZapMyWState(void)
-{
-	gMyMainWindow = NULL;
-	window_fmt = NULL;
-	window_ctx = NULL;
-	gGlobalReceiveHandler = NULL;
-	gGlobalTrackingHandler = NULL;
-}
-
-LOCALPROC CloseAglCurrentContext(void)
-{
-	if (ctx != NULL) {
-		/*
-			Only because MyDrawWithOpenGL doesn't
-			bother to do this. No one
-			uses the CurrentContext
-			without settting it first.
-		*/
-		if (GL_TRUE != aglSetCurrentContext(NULL)) {
-			/* err = aglReportError() */
-		}
-		ctx = NULL;
-	}
-}
-
-LOCALPROC CloseMainWindow(void)
-{
-	UnPrepareForDragging();
-
-	if (window_ctx != NULL) {
-		if (GL_TRUE != aglDestroyContext(window_ctx)) {
-			/* err = aglReportError() */
-		}
-		window_ctx = NULL;
-	}
-
-	if (window_fmt != NULL) {
-		aglDestroyPixelFormat(window_fmt);
-		window_fmt = NULL;
-	}
-
-	if (gMyMainWindow != NULL) {
-		DisposeWindow(gMyMainWindow);
-		gMyMainWindow = NULL;
-	}
-}
-
-enum {
-	kMagStateNormal,
-#if EnableMagnify
-	kMagStateMagnifgy,
-#endif
-	kNumMagStates
-};
-
-#define kMagStateAuto kNumMagStates
-
-LOCALVAR int CurWinIndx;
-LOCALVAR blnr HavePositionWins[kNumMagStates];
-LOCALVAR Point WinPositionWins[kNumMagStates];
-
-LOCALFUNC blnr CreateMainWindow(void)
-{
-	int WinIndx;
-	Rect MainScrnBounds;
-	Rect AllScrnBounds;
-	Rect NewWinRect;
-	short leftPos;
-	short topPos;
-	short NewWindowHeight = vMacScreenHeight;
-	short NewWindowWidth = vMacScreenWidth;
-	blnr IsOk = falseblnr;
-
-#if EnableFullScreen
-	UseFullScreen = WantFullScreen;
-#endif
-#if EnableMagnify
-	UseMagnify = WantMagnify;
-#endif
-
-#if EnableFullScreen
-	if (UseFullScreen) {
-		My_HideMenuBar();
+	ROM_File = fopen(rom_path, "rb");
+	if (NULL == ROM_File) {
+		MacMsg(kStrNoROMTitle, kStrNoROMMessage, trueblnr);
+		SpeedStopped = trueblnr;
 	} else {
-		My_ShowMenuBar();
-	}
-#endif
-
-	MyGetGrayRgnBounds(&AllScrnBounds);
-	MyGetScreenBitsBounds(&MainScrnBounds);
-
-#if EnableMagnify
-	if (UseMagnify) {
-		NewWindowHeight *= MyWindowScale;
-		NewWindowWidth *= MyWindowScale;
-	}
-#endif
-
-	leftPos = MainScrnBounds.left + ((MainScrnBounds.right - MainScrnBounds.left) - NewWindowWidth) / 2;
-	topPos = MainScrnBounds.top + ((MainScrnBounds.bottom - MainScrnBounds.top) - NewWindowHeight) / 2;
-	if (leftPos < MainScrnBounds.left) {
-		leftPos = MainScrnBounds.left;
-	}
-	if (topPos < MainScrnBounds.top) {
-		topPos = MainScrnBounds.top;
-	}
-
-	/* Create window rectangle and centre it on the screen */
-	SetRect(&MainScrnBounds, 0, 0, NewWindowWidth, NewWindowHeight);
-	OffsetRect(&MainScrnBounds, leftPos, topPos);
-
-#if EnableFullScreen
-	if (UseFullScreen) {
-		NewWinRect = AllScrnBounds;
-	} else
-#endif
-	{
-#if EnableMagnify
-		if (UseMagnify) {
-			WinIndx = kMagStateMagnifgy;
-		} else
-#endif
-		{
-			WinIndx = kMagStateNormal;
-		}
-
-		if (! HavePositionWins[WinIndx]) {
-			WinPositionWins[WinIndx].h = leftPos;
-			WinPositionWins[WinIndx].v = topPos;
-			HavePositionWins[WinIndx] = trueblnr;
-			NewWinRect = MainScrnBounds;
-		} else {
-			SetRect(&NewWinRect, 0, 0, NewWindowWidth, NewWindowHeight);
-			OffsetRect(&NewWinRect, WinPositionWins[WinIndx].h, WinPositionWins[WinIndx].v);
-		}
-	}
-
-	CurWinIndx = WinIndx;
-
-#if EnableFullScreen
-	if (UseFullScreen) {
-		hOffset = MainScrnBounds.left - AllScrnBounds.left;
-		vOffset = MainScrnBounds.top - AllScrnBounds.top;
-	}
-#endif
-
-	if (MyCreateNewWindow(&NewWinRect, &gMyMainWindow)) {
-		static const GLint window_attrib[] = {AGL_RGBA,
-#if UseAGLdoublebuff
-			AGL_DOUBLEBUFFER,
-#endif
-			/* AGL_DEPTH_SIZE, 16,  */
-			AGL_NONE};
-
-		window_fmt = aglChoosePixelFormat(NULL, 0, window_attrib);
-		if (NULL == window_fmt) {
-			/* err = aglReportError() */
-		} else {
-			window_ctx = aglCreateContext(window_fmt, NULL);
-			if (NULL == window_ctx) {
-				/* err = aglReportError() */
+		File_Size = fread(ROM, 1, kTrueROM_Size, ROM_File);
+		if (File_Size != kTrueROM_Size) {
+			if (feof(ROM_File)) {
+				MacMsg(kStrShortROMTitle, kStrShortROMMessage, trueblnr);
 			} else {
+				MacMsg(kStrNoReadROMTitle, kStrNoReadROMMessage, trueblnr);
+			}
+			SpeedStopped = trueblnr;
+		}
+		fclose(ROM_File);
+	}
+	return trueblnr;
+}
 
-				ShowWindow(gMyMainWindow);
+/*--- video out ---*/
 
-				if (GL_TRUE != (
-					/*
-						aglSetDrawable is deprecated, but use it anyway
-						if at all possible, because aglSetWindowRef
-						doesn't seeem to work properly on a
-						kPlainWindowClass window.
-						Should move to Cocoa.
-					*/
-					HaveMyaglSetDrawable()
-					? MyaglSetDrawable(window_ctx, GetWindowPort(gMyMainWindow))
-					:
-					HaveMyaglSetWindowRef()
-					? MyaglSetWindowRef(window_ctx, gMyMainWindow)
-					:
-					GL_FALSE))
-				{
-					/* err = aglReportError() */
-				} else {
-					ctx = window_ctx;
+static GtkWidget *drawing_area;
 
-#if EnableFullScreen
-					if (UseFullScreen) {
-						int h = NewWinRect.right - NewWinRect.left;
-						int v = NewWinRect.bottom - NewWinRect.top;
+LOCALVAR blnr gBackgroundFlag = falseblnr;
+LOCALVAR blnr gTrueBackgroundFlag = falseblnr;
+LOCALVAR blnr CurSpeedStopped = trueblnr;
 
-						GLhOffset = hOffset;
-						GLvOffset = v - vOffset;
-						MyAdjustGLforSize(h, v);
-					} else
-#endif
-					{
-						GLhOffset = 0;
-						GLvOffset = NewWindowHeight;
-						MyAdjustGLforSize(NewWindowWidth, NewWindowHeight);
-					}
+LOCALPROC HaveChangedScreenBuff(si4b top, si4b left, si4b bottom, si4b right)
+{
+	guchar graybuf[vMacScreenWidth * vMacScreenHeight];
 
-#if UseAGLdoublebuff && 1
-					{
-						GLint agSwapInterval = 1;
-						if (GL_TRUE != aglSetInteger(window_ctx, AGL_SWAP_INTERVAL, &agSwapInterval)) {
-							MacMsg("oops", "aglSetInteger failed", falseblnr);
-						} else {
-							/* MacMsg("good", "aglSetInteger ok", falseblnr) */;
-						}
-					}
-#endif
+	{
+		int i;
+		int j;
+		int k;
+		ui3b *p1 = (ui3b *)GetCurDrawBuff() + (ui5r)vMacScreenWidth / 8 * top;
+		ui3b *p2 = (ui3b *)graybuf + (ui5r)vMacScreenWidth * top;
+		ui5b t0;
 
-#if EnableFullScreen
-					if (! UseFullScreen)
-#endif
-					{
-						/* check if window rect valid */
-						Rect tr;
-
-						if (MyGetWindowTitleBounds(gMyMainWindow, &tr)) {
-							if (! RectInRgn(&tr, GetGrayRgn())) {
-								MySetMacWindContRect(gMyMainWindow,
-									&MainScrnBounds);
-								if (MyGetWindowTitleBounds(gMyMainWindow, &tr)) {
-									if (! RectInRgn(&tr, GetGrayRgn())) {
-										OffsetRect(&MainScrnBounds, 0, AllScrnBounds.top - tr.top);
-										MySetMacWindContRect(gMyMainWindow,
-											&MainScrnBounds);
-									}
-								}
-							}
-						}
-					}
-
-					(void) PrepareForDragging();
-
-					IsOk = trueblnr;
-
+		UnusedParam(left);
+		UnusedParam(right);
+		for (i = bottom - top; --i >= 0; ) {
+			for (j = vMacScreenWidth / 8; --j >= 0; ) {
+				t0 = *p1++;
+				for (k = 8; --k >= 0; ) {
+					*p2++ = ((t0 >> k) & 0x01) - 1;
 				}
 			}
 		}
 	}
 
-	return IsOk;
+	gdk_draw_gray_image(drawing_area->window,
+		drawing_area->style->fg_gc[GTK_WIDGET_STATE(drawing_area)],
+		left /* x */,
+		top /* y */,
+		right - left /* width */,
+		bottom - top /* height */,
+		GDK_RGB_DITHER_NONE,
+		graybuf + left + (ui5r)vMacScreenWidth * top,
+		vMacScreenWidth);
 }
 
-struct MyWState {
-	WindowPtr f_MainWindow;
-	AGLPixelFormat f_fmt;
-	AGLContext f_ctx;
-	short f_hOffset;
-	short f_vOffset;
-	blnr f_UseFullScreen;
-	blnr f_UseMagnify;
-	int f_CurWinIndx;
-	short f_GLhOffset;
-	short f_GLvOffset;
-	DragTrackingHandlerUPP f_gGlobalTrackingHandler;
-	DragReceiveHandlerUPP f_gGlobalReceiveHandler;
-};
-typedef struct MyWState MyWState;
+/*--- mouse ---*/
 
-LOCALPROC GetMyWState(MyWState *r)
+LOCALVAR blnr HaveCursorHidden = falseblnr;
+LOCALVAR blnr WantCursorHidden = falseblnr;
+
+static GdkCursor *blank_cursor;
+static GtkWidget *window = NULL;
+
+LOCALPROC ForceShowCursor(void)
 {
-	r->f_MainWindow = gMyMainWindow;
-	r->f_fmt = window_fmt;
-	r->f_ctx = window_ctx;
-	r->f_hOffset = hOffset;
-	r->f_vOffset = vOffset;
-	r->f_UseFullScreen = UseFullScreen;
-	r->f_UseMagnify = UseMagnify;
-	r->f_CurWinIndx = CurWinIndx;
-	r->f_GLhOffset = GLhOffset;
-	r->f_GLvOffset = GLvOffset;
-	r->f_gGlobalTrackingHandler = gGlobalTrackingHandler;
-	r->f_gGlobalReceiveHandler = gGlobalReceiveHandler;
-}
+	if (HaveCursorHidden) {
+		HaveCursorHidden = falseblnr;
 
-LOCALPROC SetMyWState(MyWState *r)
-{
-	gMyMainWindow = r->f_MainWindow;
-	window_fmt = r->f_fmt;
-	window_ctx = r->f_ctx;
-	hOffset = r->f_hOffset;
-	vOffset = r->f_vOffset;
-	UseFullScreen = r->f_UseFullScreen;
-	UseMagnify = r->f_UseMagnify;
-	CurWinIndx = r->f_CurWinIndx;
-	GLhOffset = r->f_GLhOffset;
-	GLvOffset = r->f_GLvOffset;
-	gGlobalTrackingHandler = r->f_gGlobalTrackingHandler;
-	gGlobalReceiveHandler = r->f_gGlobalReceiveHandler;
-
-	ctx = window_ctx;
-}
-
-LOCALFUNC blnr ReCreateMainWindow(void)
-{
-	MyWState old_state;
-	MyWState new_state;
-
-#if EnableFullScreen
-	if (! UseFullScreen)
-#endif
-	{
-		/* save old position */
-		if (gMyMainWindow != NULL) {
-			Rect r;
-
-			if (MyGetWindowContBounds(gMyMainWindow, &r)) {
-				WinPositionWins[CurWinIndx].h = r.left;
-				WinPositionWins[CurWinIndx].v = r.top;
-			}
+		if (window) {
+			gdk_window_set_cursor(window->window, NULL);
 		}
 	}
+}
 
-#if EnableFullScreen
-	UngrabMachine();
+/* cursor state */
+
+LOCALPROC MousePositionNotify(int NewMousePosh, int NewMousePosv)
+{
+	blnr ShouldHaveCursorHidden = trueblnr;
+
+	{
+		if (NewMousePosh < 0) {
+			NewMousePosh = 0;
+			ShouldHaveCursorHidden = falseblnr;
+		} else if (NewMousePosh >= vMacScreenWidth) {
+			NewMousePosh = vMacScreenWidth - 1;
+			ShouldHaveCursorHidden = falseblnr;
+		}
+		if (NewMousePosv < 0) {
+			NewMousePosv = 0;
+			ShouldHaveCursorHidden = falseblnr;
+		} else if (NewMousePosv >= vMacScreenHeight) {
+			NewMousePosv = vMacScreenHeight - 1;
+			ShouldHaveCursorHidden = falseblnr;
+		}
+
+
+		/* if (ShouldHaveCursorHidden || CurMouseButton) */
+		/* for a game like arkanoid, would like mouse to still
+		move even when outside window in one direction */
+		MyMousePositionSet(NewMousePosh, NewMousePosv);
+	}
+
+	WantCursorHidden = ShouldHaveCursorHidden;
+}
+
+LOCALPROC CheckMouseState(void)
+{
+#if 0
+	gint x;
+	gint y;
+	gint x0;
+	gint y0;
+
+	gdk_display_get_pointer(gdk_drawable_get_display(window),
+		NULL, &x, &y, NULL);
+	(void) gdk_window_get_origin(window, &x0, &y0);
+	MousePositionNotify(x - x0, y - y0);
+#endif
+	gint x;
+	gint y;
+
+	gtk_widget_get_pointer(drawing_area, &x, &y);
+	/* (void) gdk_window_get_pointer(window, &x, &y, NULL); */
+	MousePositionNotify(x, y);
+}
+
+/*--- keyboard input ---*/
+
+#define MaxNumKeycode 256
+#define KeyCodeMask (MaxNumKeycode - 1)
+	/*
+	assume keycodes >= 0 and < MaxNumKeycode, which
+	isn't promised by gtk documentation.
+	*/
+
+
+LOCALVAR si3b KC2MKC[MaxNumKeycode];
+
+LOCALPROC KC2MKCAssignOne(guint keyval, int key)
+{
+	GdkKeymapKey *keys;
+	gint n_keys;
+	int i;
+
+	if (gdk_keymap_get_entries_for_keyval(NULL,
+		keyval, &keys, &n_keys))
+	{
+		for (i = 0; i < n_keys; i++) {
+			KC2MKC[keys[i].keycode & KeyCodeMask] = key;
+		}
+		g_free(keys);
+	}
+#if 0
+	fprintf(stderr, "%d %d %d\n", (int)ks, key, (int)code);
+#endif
+}
+
+LOCALFUNC blnr KC2MKCInit(void)
+{
+	int i;
+
+	for (i = 0; i < 256; ++i) {
+		KC2MKC[i] = -1;
+	}
+
+#ifdef GDK_KP_Insert
+	KC2MKCAssignOne(GDK_KP_Insert, MKC_KP0);
+#endif
+#ifdef GDK_KP_End
+	KC2MKCAssignOne(GDK_KP_End, MKC_KP1);
+#endif
+#ifdef GDK_KP_Down
+	KC2MKCAssignOne(GDK_KP_Down, MKC_KP2);
+#endif
+#ifdef GDK_KP_Next
+	KC2MKCAssignOne(GDK_KP_Next, MKC_KP3);
+#endif
+#ifdef GDK_KP_Left
+	KC2MKCAssignOne(GDK_KP_Left, MKC_KP4);
+#endif
+#ifdef GDK_KP_Begin
+	KC2MKCAssignOne(GDK_KP_Begin, MKC_KP5);
+#endif
+#ifdef GDK_KP_Right
+	KC2MKCAssignOne(GDK_KP_Right, MKC_KP6);
+#endif
+#ifdef GDK_KP_Home
+	KC2MKCAssignOne(GDK_KP_Home, MKC_KP7);
+#endif
+#ifdef GDK_KP_Up
+	KC2MKCAssignOne(GDK_KP_Up, MKC_KP8);
+#endif
+#ifdef GDK_KP_Prior
+	KC2MKCAssignOne(GDK_KP_Prior, MKC_KP9);
+#endif
+#ifdef GDK_KP_Delete
+	KC2MKCAssignOne(GDK_KP_Delete, MKC_Decimal);
 #endif
 
-	CloseAglCurrentContext();
+	KC2MKCAssignOne(GDK_asciitilde, MKC_Grave);
+	KC2MKCAssignOne(GDK_underscore, MKC_Minus);
+	KC2MKCAssignOne(GDK_plus, MKC_Equal);
+	KC2MKCAssignOne(GDK_braceleft, MKC_LeftBracket);
+	KC2MKCAssignOne(GDK_braceright, MKC_RightBracket);
+	KC2MKCAssignOne(GDK_bar, MKC_BackSlash);
+	KC2MKCAssignOne(GDK_colon, MKC_SemiColon);
+	KC2MKCAssignOne(GDK_quotedbl, MKC_SingleQuote);
+	KC2MKCAssignOne(GDK_less, MKC_Comma);
+	KC2MKCAssignOne(GDK_greater, MKC_Period);
+	KC2MKCAssignOne(GDK_question, MKC_Slash);
 
-	GetMyWState(&old_state);
+	KC2MKCAssignOne(GDK_a, MKC_A);
+	KC2MKCAssignOne(GDK_b, MKC_B);
+	KC2MKCAssignOne(GDK_c, MKC_C);
+	KC2MKCAssignOne(GDK_d, MKC_D);
+	KC2MKCAssignOne(GDK_e, MKC_E);
+	KC2MKCAssignOne(GDK_f, MKC_F);
+	KC2MKCAssignOne(GDK_g, MKC_G);
+	KC2MKCAssignOne(GDK_h, MKC_H);
+	KC2MKCAssignOne(GDK_i, MKC_I);
+	KC2MKCAssignOne(GDK_j, MKC_J);
+	KC2MKCAssignOne(GDK_k, MKC_K);
+	KC2MKCAssignOne(GDK_l, MKC_L);
+	KC2MKCAssignOne(GDK_m, MKC_M);
+	KC2MKCAssignOne(GDK_n, MKC_N);
+	KC2MKCAssignOne(GDK_o, MKC_O);
+	KC2MKCAssignOne(GDK_p, MKC_P);
+	KC2MKCAssignOne(GDK_q, MKC_Q);
+	KC2MKCAssignOne(GDK_r, MKC_R);
+	KC2MKCAssignOne(GDK_s, MKC_S);
+	KC2MKCAssignOne(GDK_t, MKC_T);
+	KC2MKCAssignOne(GDK_u, MKC_U);
+	KC2MKCAssignOne(GDK_v, MKC_V);
+	KC2MKCAssignOne(GDK_w, MKC_W);
+	KC2MKCAssignOne(GDK_x, MKC_X);
+	KC2MKCAssignOne(GDK_y, MKC_Y);
+	KC2MKCAssignOne(GDK_z, MKC_Z);
 
-	ZapMyWState();
+	/*
+	main mappings
+	*/
 
-	if (! CreateMainWindow()) {
-		CloseMainWindow();
-		SetMyWState(&old_state);
+	KC2MKCAssignOne(GDK_F1, MKC_F1);
+	KC2MKCAssignOne(GDK_F2, MKC_F2);
+	KC2MKCAssignOne(GDK_F3, MKC_F3);
+	KC2MKCAssignOne(GDK_F4, MKC_F4);
+	KC2MKCAssignOne(GDK_F5, MKC_F5);
+	KC2MKCAssignOne(GDK_F6, MKC_F6);
+	KC2MKCAssignOne(GDK_F7, MKC_F7);
+	KC2MKCAssignOne(GDK_F8, MKC_F8);
+	KC2MKCAssignOne(GDK_F9, MKC_F9);
+	KC2MKCAssignOne(GDK_F10, MKC_F10);
+	KC2MKCAssignOne(GDK_F11, MKC_F11);
+	KC2MKCAssignOne(GDK_F12, MKC_F12);
 
-#if EnableFullScreen
-		if (UseFullScreen) {
-			My_HideMenuBar();
+#ifdef GDK_Delete
+	KC2MKCAssignOne(GDK_Delete, MKC_ForwardDel);
+#endif
+#ifdef GDK_Insert
+	KC2MKCAssignOne(GDK_Insert, MKC_Help);
+#endif
+#ifdef GDK_Help
+	KC2MKCAssignOne(GDK_Help, MKC_Help);
+#endif
+#ifdef GDK_Home
+	KC2MKCAssignOne(GDK_Home, MKC_Home);
+#endif
+#ifdef GDK_End
+	KC2MKCAssignOne(GDK_End, MKC_End);
+#endif
+
+#ifdef GDK_Page_Up
+	KC2MKCAssignOne(GDK_Page_Up, MKC_PageUp);
+#else
+#ifdef GDK_Prior
+	KC2MKCAssignOne(GDK_Prior, MKC_PageUp);
+#endif
+#endif
+
+#ifdef GDK_Page_Down
+	KC2MKCAssignOne(GDK_Page_Down, MKC_PageDown);
+#else
+#ifdef GDK_Next
+	KC2MKCAssignOne(GDK_Next, MKC_PageDown);
+#endif
+#endif
+
+#ifdef GDK_Print
+	KC2MKCAssignOne(GDK_Print, MKC_Print);
+#endif
+#ifdef GDK_Scroll_Lock
+	KC2MKCAssignOne(GDK_Scroll_Lock, MKC_ScrollLock);
+#endif
+#ifdef GDK_Pause
+	KC2MKCAssignOne(GDK_Pause, MKC_Pause);
+#endif
+
+	KC2MKCAssignOne(GDK_KP_Add, MKC_KPAdd);
+	KC2MKCAssignOne(GDK_KP_Subtract, MKC_KPSubtract);
+	KC2MKCAssignOne(GDK_KP_Multiply, MKC_KPMultiply);
+	KC2MKCAssignOne(GDK_KP_Divide, MKC_KPDevide);
+	KC2MKCAssignOne(GDK_KP_Enter, MKC_Enter);
+	KC2MKCAssignOne(GDK_KP_Equal, MKC_KPEqual);
+
+	KC2MKCAssignOne(GDK_KP_0, MKC_KP0);
+	KC2MKCAssignOne(GDK_KP_1, MKC_KP1);
+	KC2MKCAssignOne(GDK_KP_2, MKC_KP2);
+	KC2MKCAssignOne(GDK_KP_3, MKC_KP3);
+	KC2MKCAssignOne(GDK_KP_4, MKC_KP4);
+	KC2MKCAssignOne(GDK_KP_5, MKC_KP5);
+	KC2MKCAssignOne(GDK_KP_6, MKC_KP6);
+	KC2MKCAssignOne(GDK_KP_7, MKC_KP7);
+	KC2MKCAssignOne(GDK_KP_8, MKC_KP8);
+	KC2MKCAssignOne(GDK_KP_9, MKC_KP9);
+	KC2MKCAssignOne(GDK_KP_Decimal, MKC_Decimal);
+
+	KC2MKCAssignOne(GDK_Left, MKC_Left);
+	KC2MKCAssignOne(GDK_Right, MKC_Right);
+	KC2MKCAssignOne(GDK_Up, MKC_Up);
+	KC2MKCAssignOne(GDK_Down, MKC_Down);
+
+	KC2MKCAssignOne(GDK_grave, MKC_Grave);
+	KC2MKCAssignOne(GDK_minus, MKC_Minus);
+	KC2MKCAssignOne(GDK_equal, MKC_Equal);
+	KC2MKCAssignOne(GDK_bracketleft, MKC_LeftBracket);
+	KC2MKCAssignOne(GDK_bracketright, MKC_RightBracket);
+	KC2MKCAssignOne(GDK_backslash, MKC_BackSlash);
+	KC2MKCAssignOne(GDK_semicolon, MKC_SemiColon);
+	KC2MKCAssignOne(GDK_apostrophe, MKC_SingleQuote);
+	KC2MKCAssignOne(GDK_comma, MKC_Comma);
+	KC2MKCAssignOne(GDK_period, MKC_Period);
+	KC2MKCAssignOne(GDK_slash, MKC_Slash);
+
+	KC2MKCAssignOne(GDK_Escape, MKC_Escape);
+
+	KC2MKCAssignOne(GDK_Tab, MKC_Tab);
+	KC2MKCAssignOne(GDK_Return, MKC_Return);
+	KC2MKCAssignOne(GDK_space, MKC_Space);
+	KC2MKCAssignOne(GDK_BackSpace, MKC_BackSpace);
+
+	KC2MKCAssignOne(GDK_Caps_Lock, MKC_CapsLock);
+	KC2MKCAssignOne(GDK_Num_Lock, MKC_Clear);
+
+#ifndef MKC_for_Meta
+#define MKC_for_Meta MKC_Command
+#endif
+
+#ifndef MKC_for_Meta_L
+#define MKC_for_Meta_L MKC_for_Meta
+#endif
+	KC2MKCAssignOne(GDK_Meta_L, MKC_for_Meta_L);
+
+#ifndef MKC_for_Meta_R
+#define MKC_for_Meta_R MKC_for_Meta
+#endif
+	KC2MKCAssignOne(GDK_Meta_R, MKC_for_Meta_R);
+
+	KC2MKCAssignOne(GDK_Mode_switch, MKC_Option);
+	KC2MKCAssignOne(GDK_Menu, MKC_Option);
+	KC2MKCAssignOne(GDK_Super_L, MKC_Option);
+	KC2MKCAssignOne(GDK_Super_R, MKC_Option);
+	KC2MKCAssignOne(GDK_Hyper_L, MKC_Option);
+	KC2MKCAssignOne(GDK_Hyper_R, MKC_Option);
+
+	KC2MKCAssignOne(GDK_F13, MKC_Option);
+		/* seen being used in Mandrake Linux 9.2
+		for windows key */
+
+	KC2MKCAssignOne(GDK_Shift_L, MKC_Shift);
+	KC2MKCAssignOne(GDK_Shift_R, MKC_Shift);
+
+#ifndef MKC_for_Alt
+#define MKC_for_Alt MKC_Command
+#endif
+
+#ifndef MKC_for_Alt_L
+#define MKC_for_Alt_L MKC_for_Alt
+#endif
+	KC2MKCAssignOne(GDK_Alt_L, MKC_for_Alt_L);
+
+#ifndef MKC_for_Alt_R
+#define MKC_for_Alt_R MKC_for_Alt
+#endif
+	KC2MKCAssignOne(GDK_Alt_R, MKC_for_Alt_R);
+
+#ifndef MKC_for_Control
+#define MKC_for_Control MKC_Control
+#endif
+
+#ifndef MKC_for_Control_L
+#define MKC_for_Control_L MKC_for_Control
+#endif
+	KC2MKCAssignOne(GDK_Control_L, MKC_for_Control_L);
+
+#ifndef MKC_for_Control_R
+#define MKC_for_Control_R MKC_for_Control
+#endif
+	KC2MKCAssignOne(GDK_Control_R, MKC_for_Control_R);
+
+	KC2MKCAssignOne(GDK_1, MKC_1);
+	KC2MKCAssignOne(GDK_2, MKC_2);
+	KC2MKCAssignOne(GDK_3, MKC_3);
+	KC2MKCAssignOne(GDK_4, MKC_4);
+	KC2MKCAssignOne(GDK_5, MKC_5);
+	KC2MKCAssignOne(GDK_6, MKC_6);
+	KC2MKCAssignOne(GDK_7, MKC_7);
+	KC2MKCAssignOne(GDK_8, MKC_8);
+	KC2MKCAssignOne(GDK_9, MKC_9);
+	KC2MKCAssignOne(GDK_0, MKC_0);
+
+	KC2MKCAssignOne(GDK_A, MKC_A);
+	KC2MKCAssignOne(GDK_B, MKC_B);
+	KC2MKCAssignOne(GDK_C, MKC_C);
+	KC2MKCAssignOne(GDK_D, MKC_D);
+	KC2MKCAssignOne(GDK_E, MKC_E);
+	KC2MKCAssignOne(GDK_F, MKC_F);
+	KC2MKCAssignOne(GDK_G, MKC_G);
+	KC2MKCAssignOne(GDK_H, MKC_H);
+	KC2MKCAssignOne(GDK_I, MKC_I);
+	KC2MKCAssignOne(GDK_J, MKC_J);
+	KC2MKCAssignOne(GDK_K, MKC_K);
+	KC2MKCAssignOne(GDK_L, MKC_L);
+	KC2MKCAssignOne(GDK_M, MKC_M);
+	KC2MKCAssignOne(GDK_N, MKC_N);
+	KC2MKCAssignOne(GDK_O, MKC_O);
+	KC2MKCAssignOne(GDK_P, MKC_P);
+	KC2MKCAssignOne(GDK_Q, MKC_Q);
+	KC2MKCAssignOne(GDK_R, MKC_R);
+	KC2MKCAssignOne(GDK_S, MKC_S);
+	KC2MKCAssignOne(GDK_T, MKC_T);
+	KC2MKCAssignOne(GDK_U, MKC_U);
+	KC2MKCAssignOne(GDK_V, MKC_V);
+	KC2MKCAssignOne(GDK_W, MKC_W);
+	KC2MKCAssignOne(GDK_X, MKC_X);
+	KC2MKCAssignOne(GDK_Y, MKC_Y);
+	KC2MKCAssignOne(GDK_Z, MKC_Z);
+
+	InitKeyCodes();
+
+	return trueblnr;
+}
+
+LOCALPROC CheckTheCapsLock(void)
+{
+	GdkModifierType mask;
+
+	(void) gdk_window_get_pointer(window->window, NULL, NULL,
+		&mask);
+
+	Keyboard_UpdateKeyMap2(MKC_CapsLock, (mask & GDK_LOCK_MASK) != 0);
+}
+
+LOCALPROC DoKeyCode(guint keycode, blnr down)
+{
+	int key = KC2MKC[keycode & KeyCodeMask];
+	if (key >= 0) {
+		if (MKC_CapsLock == key) {
+			CheckTheCapsLock();
 		} else {
-			My_ShowMenuBar();
+			Keyboard_UpdateKeyMap2(key, down);
 		}
-#endif
+	}
+}
 
-		return falseblnr;
-	} else {
-		GetMyWState(&new_state);
-		SetMyWState(&old_state);
-		CloseMainWindow();
-		SetMyWState(&new_state);
+/*--- time, date, location ---*/
 
-#if EnableMouseMotion && EnableFullScreen
-		if (HaveCursorHidden) {
-			(void) MyMoveMouse(CurMouseH, CurMouseV);
-			WantCursorHidden = trueblnr;
-		} else
+LOCALVAR ui5b TrueEmulatedTime = 0;
+LOCALVAR ui5b CurEmulatedTime = 0;
+
+#include "DATE2SEC.h"
+
+#define TicksPerSecond 1000000
+
+LOCALVAR blnr HaveTimeDelta = falseblnr;
+LOCALVAR ui5b TimeDelta;
+
+LOCALVAR ui5b NewMacDateInSeconds;
+
+LOCALVAR ui5b LastTimeSec;
+LOCALVAR ui5b LastTimeUsec;
+
+LOCALPROC GetCurrentTicks(void)
+{
+	GTimeVal t;
+
+	g_get_current_time(&t);
+	if (! HaveTimeDelta) {
+		time_t Current_Time;
+		struct tm *s;
+
+#if 0
+		GDate *date;
+		date = g_date_new();
+		g_date_set_time_val(date, &t);
+		g_date_free(date);
 #endif
-		{
-			MouseIsOutside = falseblnr; /* don't know */
+		(void) time(&Current_Time);
+		s = localtime(&Current_Time);
+		TimeDelta = Date2MacSeconds(s->tm_sec, s->tm_min, s->tm_hour,
+			s->tm_mday, 1 + s->tm_mon, 1900 + s->tm_year) - t.tv_sec;
+#if 0 /* how portable is this ? */
+		CurMacDelta = ((ui5b)(s->tm_gmtoff) & 0x00FFFFFF)
+			| ((s->tm_isdst ? 0x80 : 0) << 24);
+#endif
+		HaveTimeDelta = trueblnr;
+	}
+
+	NewMacDateInSeconds = t.tv_sec + TimeDelta;
+	LastTimeSec = (ui5b)t.tv_sec;
+	LastTimeUsec = (ui5b)t.tv_usec;
+}
+
+#define MyInvTimeStep 16626 /* TicksPerSecond / 60.14742 */
+
+LOCALVAR ui5b NextTimeSec;
+LOCALVAR ui5b NextTimeUsec;
+
+LOCALPROC IncrNextTime(void)
+{
+	NextTimeUsec += MyInvTimeStep;
+	if (NextTimeUsec >= TicksPerSecond) {
+		NextTimeUsec -= TicksPerSecond;
+		NextTimeSec += 1;
+	}
+}
+
+LOCALPROC InitNextTime(void)
+{
+	NextTimeSec = LastTimeSec;
+	NextTimeUsec = LastTimeUsec;
+	IncrNextTime();
+}
+
+LOCALPROC StartUpTimeAdjust(void)
+{
+	GetCurrentTicks();
+	InitNextTime();
+}
+
+LOCALFUNC si5b GetTimeDiff(void)
+{
+	return ((si5b)(LastTimeSec - NextTimeSec)) * TicksPerSecond
+		+ ((si5b)(LastTimeUsec - NextTimeUsec));
+}
+
+LOCALPROC UpdateTrueEmulatedTime(void)
+{
+	si5b TimeDiff;
+
+	GetCurrentTicks();
+
+	TimeDiff = GetTimeDiff();
+	if (TimeDiff >= 0) {
+		if (TimeDiff > 4 * MyInvTimeStep) {
+			/* emulation interrupted, forget it */
+			++TrueEmulatedTime;
+			InitNextTime();
+		} else {
+			do {
+				++TrueEmulatedTime;
+				IncrNextTime();
+				TimeDiff -= TicksPerSecond;
+			} while (TimeDiff >= 0);
 		}
+	} else if (TimeDiff < - 2 * MyInvTimeStep) {
+		/* clock goofed if ever get here, reset */
+		InitNextTime();
+	}
+}
 
+LOCALFUNC blnr CheckDateTime(void)
+{
+	if (CurMacDateInSeconds != NewMacDateInSeconds) {
+		CurMacDateInSeconds = NewMacDateInSeconds;
 		return trueblnr;
+	} else {
+		return falseblnr;
 	}
 }
 
-#if EnableMagnify || EnableFullScreen
-LOCALPROC CheckMagnifyAndFullScreen(void)
+/*--- basic dialogs ---*/
+
+LOCALPROC CheckSavedMacMsg(void)
 {
-	if (0
-#if EnableMagnify
-		|| (UseMagnify != WantMagnify)
-#endif
-#if EnableFullScreen
-		|| (UseFullScreen != WantFullScreen)
-#endif
-		)
-	{
-		(void) ReCreateMainWindow();
+	if (nullpr != SavedBriefMsg) {
+		char briefMsg0[ClStrMaxLength + 1];
+		char longMsg0[ClStrMaxLength + 1];
+
+		NativeStrFromCStr(briefMsg0, SavedBriefMsg, falseblnr);
+		NativeStrFromCStr(longMsg0, SavedLongMsg, falseblnr);
+
+		fprintf(stderr, "%s\n", briefMsg0);
+		fprintf(stderr, "%s\n", longMsg0);
+
+		SavedBriefMsg = nullpr;
 	}
 }
-#endif
 
-#if EnableFullScreen && EnableMagnify
-enum {
-	kWinStateWindowed,
-#if EnableMagnify
-	kWinStateFullScreen,
-#endif
-	kNumWinStates
-};
-#endif
+LOCALVAR blnr CaughtMouse = falseblnr;
 
-#if EnableFullScreen && EnableMagnify
-LOCALVAR int WinMagStates[kNumWinStates];
-#endif
+/*--- main window creation and disposal ---*/
 
-#if EnableFullScreen
-LOCALPROC ToggleWantFullScreen(void)
+LOCALVAR int my_argc;
+LOCALVAR char **my_argv;
+
+/* Create a new backing pixmap of the appropriate size */
+static gboolean configure_event(GtkWidget *widget,
+	GdkEventConfigure *event)
 {
-	WantFullScreen = ! WantFullScreen;
+	return TRUE;
+}
 
-#if EnableMagnify
-	{
-		int OldWinState = UseFullScreen ? kWinStateFullScreen : kWinStateWindowed;
-		int OldMagState = UseMagnify ? kMagStateMagnifgy : kMagStateNormal;
-		int NewWinState = WantFullScreen ? kWinStateFullScreen : kWinStateWindowed;
-		int NewMagState = WinMagStates[NewWinState];
-		WinMagStates[OldWinState] = OldMagState;
-		if (kMagStateAuto != NewMagState) {
-			WantMagnify = (kMagStateMagnifgy == NewMagState);
-		} else {
-			WantMagnify = falseblnr;
-			if (WantFullScreen
-				&& HaveMyCGDisplayPixelsWide()
-				&& HaveMyCGDisplayPixelsHigh())
-			{
-				CGDirectDisplayID CurMainDisplayID = MyMainDisplayID();
+/* Redraw the screen from the backing pixmap */
+static gboolean expose_event(GtkWidget *widget,
+	GdkEventExpose *event,
+	gpointer user_data)
+{
+	int x0 = event->area.x;
+	int y0 = event->area.y;
+	int x1 = x0 + event->area.width;
+	int y1 = y0 + event->area.height;
 
-				if ((MyCGDisplayPixelsWide(CurMainDisplayID) >= vMacScreenWidth * MyWindowScale)
-					&& (MyCGDisplayPixelsHigh(CurMainDisplayID) >= vMacScreenHeight * MyWindowScale)
-					)
-				{
-					WantMagnify = trueblnr;
-				}
-			}
-		}
+#if 0 && MyDbgEvents
+	fprintf(stderr, "- event - Expose\n");
+#endif
+
+	if (x0 < 0) {
+		x0 = 0;
+	}
+	if (x1 > vMacScreenWidth) {
+		x1 = vMacScreenWidth;
+	}
+	if (y0 < 0) {
+		y0 = 0;
+	}
+	if (y1 > vMacScreenHeight) {
+		y1 = vMacScreenHeight;
+	}
+	if ((x0 < x1) && (y0 < y1)) {
+		HaveChangedScreenBuff(y0, x0, y1, x1);
+	}
+
+	return FALSE;
+}
+
+static gboolean button_press_event(GtkWidget *widget,
+	GdkEventButton *event,
+	gpointer user_data)
+{
+	MousePositionNotify(event->x, event->y);
+	MyMouseButtonSet(trueblnr);
+
+	return TRUE;
+}
+
+static gboolean button_release_event(GtkWidget *widget,
+	GdkEventButton *event,
+	gpointer user_data)
+{
+	MousePositionNotify(event->x, event->y);
+	MyMouseButtonSet(falseblnr);
+
+	return TRUE;
+}
+
+static gboolean motion_notify_event(GtkWidget *widget,
+	GdkEventMotion *event,
+	gpointer user_data)
+{
+	int x;
+	int y;
+	GdkModifierType state;
+
+	if (event->is_hint) {
+		gdk_window_get_pointer(event->window, &x, &y, &state);
+	} else {
+		x = event->x;
+		y = event->y;
+		state = event->state;
+	}
+
+	MousePositionNotify(x, y);
+	MyMouseButtonSet((state & GDK_BUTTON1_MASK) != 0);
+
+	return TRUE;
+}
+
+static gboolean enter_notify_event(GtkWidget *widget,
+	GdkEventCrossing *event,
+	gpointer user_data)
+{
+	CaughtMouse = trueblnr;
+
+	MousePositionNotify(event->x, event->y);
+	MyMouseButtonSet((event->state & GDK_BUTTON1_MASK) != 0);
+
+	return TRUE;
+}
+
+static gboolean leave_notify_event(GtkWidget *widget,
+	GdkEventCrossing *event,
+	gpointer user_data)
+{
+	MousePositionNotify(event->x, event->y);
+	MyMouseButtonSet((event->state & GDK_BUTTON1_MASK) != 0);
+
+	CaughtMouse = falseblnr;
+
+	return TRUE;
+}
+
+static gboolean delete_event(GtkWidget *widget,
+	GdkEventMotion *event)
+{
+	RequestMacOff = trueblnr;
+
+	return TRUE;
+}
+
+LOCALPROC ReconnectKeyCodes3(void)
+{
+	CheckTheCapsLock();
+
+#if 0
+	if (WantCmdOptOnReconnect) {
+		WantCmdOptOnReconnect = falseblnr;
+
+		GetTheDownKeys();
 	}
 #endif
 }
-#endif
 
-LOCALVAR EventLoopTimerRef MyTimerRef;
+LOCALPROC DisconnectKeyCodes3(void)
+{
+	DisconnectKeyCodes2();
+	MyMouseButtonSet(falseblnr);
+}
+
+LOCALVAR blnr ADialogIsUp = falseblnr;
+
+LOCALPROC MyBeginDialog(void)
+{
+	DisconnectKeyCodes3();
+	ADialogIsUp = trueblnr;
+	ForceShowCursor();
+}
+
+LOCALPROC MyEndDialog(void)
+{
+	ADialogIsUp = falseblnr;
+	ReconnectKeyCodes3();
+}
+
+/*--- SavedTasks ---*/
 
 LOCALPROC LeaveBackground(void)
 {
 	ReconnectKeyCodes3();
-	SetCursorArrow();
+#if 0
+	DisableKeyRepeat();
+#endif
 }
 
 LOCALPROC EnterBackground(void)
 {
+#if 0
+	RestoreKeyRepeat();
+#endif
 	DisconnectKeyCodes3();
 
-#if EnableFullScreen
-	if (WantFullScreen) {
-		ToggleWantFullScreen();
-	}
-#endif
+	ForceShowCursor();
 }
 
 LOCALPROC LeaveSpeedStopped(void)
 {
-#if MySoundEnabled
-	MySound_Start();
-#endif
-
 	StartUpTimeAdjust();
-	(void) SetEventLoopTimerNextFireTime(
-		MyTimerRef, MyTickDuration);
 }
 
 LOCALPROC EnterSpeedStopped(void)
 {
-#if MySoundEnabled
-	MySound_Stop();
-#endif
 }
 
-LOCALPROC CheckStateAfterEvents(void)
+static void InsertADisk0(void)
+{
+	char ts[ClStrMaxLength + 1];
+	GtkWidget *dialog;
+
+	NativeStrFromCStr(ts, kStrMenuItemOpen, falseblnr);
+
+	MyBeginDialog();
+	dialog = gtk_file_chooser_dialog_new(ts,
+		GTK_WINDOW(window),
+		GTK_FILE_CHOOSER_ACTION_OPEN,
+		GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+		GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
+		NULL);
+	MyEndDialog();
+
+	if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
+		char *filename;
+
+		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+		(void) Sony_Insert1(filename, falseblnr);
+		g_free(filename);
+	}
+
+	gtk_widget_destroy(dialog);
+}
+
+LOCALPROC CheckForSavedTasks(void)
 {
 	if (MyEvtQNeedRecover) {
 		MyEvtQNeedRecover = falseblnr;
@@ -4080,12 +1032,6 @@ LOCALPROC CheckStateAfterEvents(void)
 		/* attempt cleanup, MyEvtQNeedRecover may get set again */
 		MyEvtQTryRecoverFromFull();
 	}
-
-#if EnableMouseMotion && EnableFullScreen
-	if (HaveMouseMotion) {
-		MyMouseConstrain();
-	}
-#endif
 
 	if (RequestMacOff) {
 		RequestMacOff = falseblnr;
@@ -4098,7 +1044,6 @@ LOCALPROC CheckStateAfterEvents(void)
 	}
 
 	if (ForceMacOff) {
-		QuitApplicationEventLoop();
 		return;
 	}
 
@@ -4122,18 +1067,6 @@ LOCALPROC CheckStateAfterEvents(void)
 		}
 	}
 
-#if EnableMagnify || EnableFullScreen
-	if (! (gTrueBackgroundFlag || ADialogIsUp)) {
-		CheckMagnifyAndFullScreen();
-	}
-#endif
-
-#if EnableFullScreen
-	if (GrabMachine != (UseFullScreen && ! (gTrueBackgroundFlag || ADialogIsUp || CurSpeedStopped))) {
-		GrabMachine = ! GrabMachine;
-		AdjustMachineGrab();
-	}
-#endif
 
 	if ((nullpr != SavedBriefMsg) & ! MacMsgDisplayed) {
 		MacMsgDisplayOn();
@@ -4144,109 +1077,67 @@ LOCALPROC CheckStateAfterEvents(void)
 		HaveChangedScreenBuff(0, 0, vMacScreenHeight, vMacScreenWidth);
 	}
 
-	if (gTrueBackgroundFlag || ADialogIsUp) {
-		/*
-			dialog during drag and drop hangs if in background
-				and don't want recursive dialogs
-			so wait til later to display dialog
-		*/
-	} else {
-#if IncludeSonyNew
-		if (vSonyNewDiskWanted) {
-#if IncludeSonyNameNew
-			if (vSonyNewDiskName != NotAPbuf) {
-				MakeNewDisk(vSonyNewDiskSize, PbufToCFString(vSonyNewDiskName));
-				PbufDispose(vSonyNewDiskName);
-				vSonyNewDiskName = NotAPbuf;
-			} else
-#endif
-			{
-				MakeNewDisk(vSonyNewDiskSize, NULL);
-			}
-			vSonyNewDiskWanted = falseblnr;
-				/* must be done after may have gotten disk */
-		}
-#endif
-		if (RequestInsertDisk) {
-			RequestInsertDisk = falseblnr;
-			InsertADisk0();
+	/* CheckSavedMacMsg(); */
 
-			PostIfStoppedLowPriorityEvent();
-		}
-
-		/* CheckSavedMacMsg(); */
-	}
-}
-
-#if 0
-typedef boolean_t (*CGCursorIsVisibleProcPtr)(void);
-
-LOCALVAR CGCursorIsVisibleProcPtr MyCGCursorIsVisible = NULL;
-LOCALVAR blnr DidCGCursorIsVisible = falseblnr;
-
-LOCALFUNC blnr HaveMyCGCursorIsVisible(void)
-{
-	if (! DidCGCursorIsVisible) {
-		if (HaveApplicationServicesBun()) {
-			MyCGCursorIsVisible =
-				(CGCursorIsVisibleProcPtr)
-				CFBundleGetFunctionPointerForName(
-					AppServBunRef, CFSTR("CGCursorIsVisible"));
-		}
-		DidCGCursorIsVisible = trueblnr;
-	}
-	return (MyCGCursorIsVisible != NULL);
-}
-#endif
-
-LOCALPROC DoNotInBackgroundTasks(void)
-{
-#if 0
-	if (HaveMyCGCursorIsVisible()) {
-		HaveCursorHidden = ! MyCGCursorIsVisible();
-
-		/*
-			This shouldn't be needed, but have seen
-			cursor state get messed up in 10.4.
-			If the os x hide count gets off, this
-			should fix it within a few ticks.
-
-			oops, no, doesn't seem to be accurate,
-			and makes things worse. particularly if
-			cursor in obscured state after typing
-			into dialog.
-		*/
-	}
-#endif
-
-	if (HaveCursorHidden != ((WantCursorHidden
-#if EnableFullScreen
-		|| UseFullScreen
-#endif
-		) && ! (gTrueBackgroundFlag || ADialogIsUp || CurSpeedStopped)))
+	if (HaveCursorHidden != (WantCursorHidden && CaughtMouse
+		&& ! (gTrueBackgroundFlag || ADialogIsUp || CurSpeedStopped)))
 	{
 		HaveCursorHidden = ! HaveCursorHidden;
 		if (HaveCursorHidden) {
-			MyHideCursor();
+			gdk_window_set_cursor(window->window, blank_cursor);
 		} else {
-			/*
-				kludge for OS X, where mouse over Dock devider
-				changes cursor, and never sets it back.
-			*/
-			SetCursorArrow();
+			gdk_window_set_cursor(window->window, NULL);
+		}
+	}
 
-			MyShowCursor();
+	if (gTrueBackgroundFlag || ADialogIsUp) {
+	} else {
+		if (RequestInsertDisk) {
+			RequestInsertDisk = falseblnr;
+			InsertADisk0();
 		}
 	}
 }
 
-LOCALPROC CheckForSavedTasks(void)
+/*--- command line parsing ---*/
+
+LOCALFUNC blnr ScanCommandLine(void)
 {
-	CheckStateAfterEvents();
-	if (! (gTrueBackgroundFlag || ADialogIsUp)) {
-		DoNotInBackgroundTasks();
+	int i;
+
+	for (i = 1; i < my_argc; ++i) {
+		if ('-' == my_argv[i][0]) {
+#if 0
+			if ((0 == strcmp(my_argv[i], "--display")) ||
+				(0 == strcmp(my_argv[i], "-display")))
+			{
+				++i;
+				if (i < my_argc) {
+					display_name = my_argv[i];
+				}
+			} else
+#endif
+			if ((0 == strcmp(my_argv[i], "--rom")) ||
+				(0 == strcmp(my_argv[i], "-r")))
+			{
+				++i;
+				if (i < my_argc) {
+					rom_path = my_argv[i];
+				}
+			} else
+			if (0 == strcmp(my_argv[i], "-l")) {
+				SpeedValue = 0;
+			} else {
+				MacMsg(kStrBadArgTitle, kStrBadArgMessage, falseblnr);
+			}
+		} else {
+			(void) Sony_Insert1(my_argv[i], falseblnr);
+		}
 	}
+	return trueblnr;
 }
+
+/*--- main program flow ---*/
 
 LOCALVAR ui5b OnTrueTime = 0;
 
@@ -4261,9 +1152,6 @@ LOCALPROC RunEmulatedTicksToTrueTime(void)
 	si3b n;
 
 	if (CheckDateTime()) {
-#if MySoundEnabled
-		MySound_SecondNotify();
-#endif
 	}
 
 	n = OnTrueTime - CurEmulatedTime;
@@ -4274,7 +1162,10 @@ LOCALPROC RunEmulatedTicksToTrueTime(void)
 			CurEmulatedTime = OnTrueTime - n;
 		}
 
-		if (! (gBackgroundFlag || ADialogIsUp)) {
+		if ((! gBackgroundFlag || ADialogIsUp)
+			&& (! CaughtMouse)
+			)
+		{
 			CheckMouseState();
 		}
 
@@ -4288,403 +1179,249 @@ LOCALPROC RunEmulatedTicksToTrueTime(void)
 	}
 }
 
-static pascal void MyTimerProc(EventLoopTimerRef inTimer,
-	void *inUserData)
+LOCALPROC RunOnEndOfSixtieth(void)
 {
-	UnusedParam(inUserData);
+	while (ExtraTimeNotOver()) {
+		si5b TimeDiff = GetTimeDiff();
+		if (TimeDiff < 0) {
+			g_usleep(- TimeDiff);
+		}
+	}
 
-	if (CurSpeedStopped) {
-		(void) SetEventLoopTimerNextFireTime(
-			inTimer, kEventDurationForever);
-	} else {
-		UpdateTrueEmulatedTime();
+	OnTrueTime = TrueEmulatedTime;
+	RunEmulatedTicksToTrueTime();
+}
+
+LOCALPROC WaitForTheNextEvent(void)
+{
+	(void) gtk_main_iteration_do(TRUE);
+}
+
+LOCALPROC CheckForSystemEvents(void)
+{
+	int i = 10;
+
+	while (gtk_events_pending() && (--i >= 0)) {
+		(void) gtk_main_iteration_do(FALSE);
+	}
+#if 0
+	XFlush(x_display);
+#endif
+}
+
+static gboolean
+MainEventLoop(gpointer data)
+{
+	(void) data;
+	fprintf(stderr, "hello from MainEventLoop\n");
+	for (; ; ) {
+		CheckForSystemEvents();
+		CheckForSavedTasks();
+		if (ForceMacOff) {
+			goto Label_01;
+		}
+
+		if (CurSpeedStopped) {
+			WaitForTheNextEvent();
+		} else {
+			DoEmulateExtraTime();
+			RunOnEndOfSixtieth();
+		}
+	}
+#if 0
+	while (! gtk_main_iteration_do(FALSE)) {
+		if (! gtk_events_pending()) {
+			fprintf(stderr, "sleep\n");
+			g_usleep(1000000);
+		}
+	}
+#endif
+Label_01:
+	fprintf(stderr, "leaving MainEventLoop\n");
+
+	gtk_main_quit();
+
+	return FALSE;
+}
+
+static gboolean
+focus_in_event(GtkWidget *widget, GdkEvent *event,
+	gpointer data)
+{
+	gTrueBackgroundFlag = falseblnr;
+
+	CheckMouseState();
+
+	return FALSE;
+}
+
+static gboolean
+focus_out_event(GtkWidget *widget, GdkEvent *event,
+	gpointer data)
+{
+	gTrueBackgroundFlag = trueblnr;
+	return FALSE;
+}
+
+static gboolean key_press_event(GtkWidget *widget,
+	GdkEventKey *event,
+	gpointer user_data)
+{
+#if 0
+	fprintf(stderr, "hello from key_press_event\n");
+	fprintf(stderr, "keyval %d\n", event->keyval);
+	fprintf(stderr, "hardware_keycode %d\n", event->hardware_keycode);
+#endif
+#if 0
+	{
+		GdkKeymapKey *keys;
+		gint n_keys;
+		int i;
+
+		if (gdk_keymap_get_entries_for_keyval(NULL,
+			event->keyval, &keys, &n_keys))
 		{
-			EventTimeout inTimeout = NextTickChangeTime - GetCurrentEventTime();
-			if (inTimeout > 0.0) {
-				(void) SetEventLoopTimerNextFireTime(
-					inTimer, inTimeout);
-				/*
-					already a periodic timer, this is just to make
-					sure of accuracy.
-				*/
+			for (i = 0; i < n_keys; i++) {
+				fprintf(stderr, "keycode %d\n", keys[i].keycode);
+			}
+			g_free(keys);
+		}
+	}
+#endif
+	DoKeyCode(event->hardware_keycode, trueblnr);
+
+	return TRUE;
+}
+
+static gboolean key_release_event(GtkWidget *widget,
+	GdkEventKey *event,
+	gpointer user_data)
+{
+#if 0
+	fprintf(stderr, "hello from key_release_event\n");
+	fprintf(stderr, "keyval %d\n", event->keyval);
+	fprintf(stderr, "hardware_keycode %d\n", event->hardware_keycode);
+#endif
+	DoKeyCode(event->hardware_keycode, falseblnr);
+
+	return TRUE;
+}
+
+static void drag_data_received(GtkWidget *widget,
+	GdkDragContext *drag_context,
+	gint x,
+	gint y,
+	GtkSelectionData *data,
+	guint info,
+	guint time,
+	gpointer user_data)
+{
+	char **uris;
+	char *file;
+	int i;
+	gboolean handled = FALSE;
+
+	uris = g_strsplit((char *)data->data, "\r\n", -1);
+	if (uris != NULL) {
+		for (i = 0; uris[i] != NULL; i++) {
+			file = g_filename_from_uri(uris[i], NULL, NULL);
+			/* file = gnome_vfs_get_local_path_from_uri(uris[i]); */
+			if (file != NULL) {
+				(void) Sony_Insert1(file, falseblnr);
+				handled = TRUE;
+				g_free(file);
 			}
 		}
-
-		OnTrueTime = TrueEmulatedTime;
-		RunEmulatedTicksToTrueTime();
-
-		PostMyLowPriorityTasksEvent();
+		g_strfreev(uris);
+	}
+	gtk_drag_finish(drag_context, handled, FALSE, time);
+	if (handled) {
+		gtk_window_present_with_time(GTK_WINDOW(window), time);
 	}
 }
 
-LOCALFUNC blnr InitMyLowPriorityTasksEvent(void)
+static void do_more_commands_item(GtkAction *action, gpointer user_data)
 {
-	if (noErr != InstallEventLoopTimer(GetMainEventLoop(),
-		kEventDurationMinute, /* will set actual time later */
-		MyTickDuration,
-		NewEventLoopTimerUPP(MyTimerProc),
-		NULL, &MyTimerRef))
-	{
-		return falseblnr;
-	}
-
-	if (noErr != CreateEvent(nil, 'MnvM', 'MnvM', GetCurrentEventTime(),
-						kEventAttributeNone, &EventForMyLowPriority))
-	{
-		EventForMyLowPriority = nil;
-	} else {
-		if (noErr == PostEventToQueue(GetMainEventQueue(),
-			EventForMyLowPriority, kEventPriorityLow))
-		{
-			return trueblnr;
-			/* ReleaseEvent(EventForMyLowPriority); */
-		}
-	}
-	return falseblnr;
+	DoMoreCommandsMsg();
 }
 
-#define CheckItem CheckMenuItem
+static void do_about_item(GtkAction *action, gpointer user_data)
+{
+	DoAboutMsg();
+}
 
-/* Menu Constants */
+static void do_quit_item(GtkAction *action, gpointer user_data)
+{
+	RequestMacOff = trueblnr;
+}
 
-#define kAppleMenu   128
-#define kFileMenu    129
-#define kSpecialMenu 130
+static void do_open_item(GtkAction *action, gpointer user_data)
+{
+	RequestInsertDisk = trueblnr;
+}
 
-enum {
-	kCmdIdNull,
-	kCmdIdMoreCommands,
+LOCALPROC MyAppendConvertMenuItem(GtkWidget *the_menu,
+	GCallback c_handler, gpointer gobject, char *s, blnr AddEllipsis)
+{
+	char ts[ClStrMaxLength + 1];
+	GtkWidget *the_item;
 
-	kNumCmdIds
+	NativeStrFromCStr(ts, s, AddEllipsis);
+	the_item = gtk_menu_item_new_with_label(ts);
+	g_signal_connect(G_OBJECT(the_item), "activate",
+		c_handler, gobject);
+	gtk_menu_shell_append(GTK_MENU_SHELL(the_menu), the_item);
+}
+
+LOCALPROC MyAppendSubmenuConvertName(GtkWidget *menubar,
+	GtkWidget *the_menu, char *s)
+{
+	char ts[ClStrMaxLength + 1];
+	GtkWidget *the_item;
+
+	NativeStrFromCStr(ts, s, falseblnr);
+	the_item = gtk_menu_item_new_with_label(ts);
+	gtk_menu_item_set_submenu(GTK_MENU_ITEM(the_item), the_menu);
+	gtk_menu_shell_append(GTK_MENU_SHELL(menubar), the_item);
+}
+
+static GdkPixmap *blank_pixmap;
+static GdkColor blank_color = {
+	0, 0, 0, 0
 };
 
-LOCALFUNC OSStatus MyProcessCommand(MenuCommand inCommandID)
+static gchar blank_cursor_bits[] = {
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+
+static GtkTargetEntry dnd_target =
 {
-	OSStatus result = noErr;
-
-	switch (inCommandID) {
-		case kHICommandAbout:
-			DoAboutMsg();
-			break;
-		case kHICommandQuit:
-			RequestMacOff = trueblnr;
-			break;
-		case kHICommandOpen:
-			RequestInsertDisk = trueblnr;
-			break;
-		case kCmdIdMoreCommands:
-			DoMoreCommandsMsg();
-			break;
-		default:
-			result = eventNotHandledErr;
-			break;
-	}
-
-	return result;
-}
-
-LOCALFUNC OSStatus Keyboard_UpdateKeyMap3(EventRef theEvent, blnr down)
-{
-	UInt32 uiKeyCode;
-
-	HandleEventModifiers(theEvent);
-	GetEventParameter(theEvent, kEventParamKeyCode, typeUInt32, NULL, sizeof(uiKeyCode), NULL, &uiKeyCode);
-	Keyboard_UpdateKeyMap2(uiKeyCode & 0x000000FF, down);
-	return noErr;
-}
-
-static pascal OSStatus MyEventHandler(EventHandlerCallRef nextHandler, EventRef theEvent, void * userData)
-{
-	OSStatus result = eventNotHandledErr;
-	UInt32 eventClass = GetEventClass(theEvent);
-	UInt32 eventKind = GetEventKind(theEvent);
-
-	UnusedParam(userData);
-
-	switch (eventClass) {
-		case kEventClassMouse:
-			switch (eventKind) {
-				case kEventMouseDown:
-#if EnableFullScreen
-					if (GrabMachine) {
-						HandleEventLocation(theEvent);
-						HandleEventModifiers(theEvent);
-						MyMouseButtonSet(trueblnr);
-						result = noErr;
-					} else
-#endif
-					{
-						result = CallNextEventHandler(nextHandler, theEvent);
-					}
-					break;
-				case kEventMouseUp:
-					HandleEventLocation(theEvent);
-					HandleEventModifiers(theEvent);
-					MyMouseButtonSet(falseblnr);
-#if EnableFullScreen
-					if (GrabMachine) {
-						result = noErr;
-					} else
-#endif
-					{
-						result = CallNextEventHandler(nextHandler, theEvent);
-					}
-					break;
-				case kEventMouseMoved:
-				case kEventMouseDragged:
-					IsOurMouseMove = falseblnr;
-					result = CallNextEventHandler(nextHandler, theEvent);
-						/*
-							Actually, mousing over window does't seem
-							to go through here, it goes directly to
-							the window routine. But since not documented
-							either way, leave the check in case this
-							changes.
-						*/
-					if (! IsOurMouseMove) {
-						MouseIsOutside = trueblnr;
-#if 0 /* don't bother, CheckMouseState will take care of it, better */
-						HandleEventLocation(theEvent);
-						HandleEventModifiers(theEvent);
-#endif
-					}
-					break;
-			}
-			break;
-		case kEventClassApplication:
-			switch (eventKind) {
-				case kEventAppActivated:
-					gTrueBackgroundFlag = falseblnr;
-					result = noErr;
-					PostIfStoppedLowPriorityEvent();
-					break;
-				case kEventAppDeactivated:
-					gTrueBackgroundFlag = trueblnr;
-					result = noErr;
-					PostIfStoppedLowPriorityEvent();
-					break;
-			}
-			break;
-		case kEventClassCommand:
-			switch (eventKind) {
-				case kEventProcessCommand:
-					{
-						HICommand hiCommand;
-
-						GetEventParameter(theEvent, kEventParamDirectObject, typeHICommand, NULL,
-							sizeof(HICommand), NULL, &hiCommand);
-						result = MyProcessCommand(hiCommand.commandID);
-						PostIfStoppedLowPriorityEvent();
-					}
-					break;
-			}
-			break;
-		case kEventClassKeyboard:
-			if (ADialogIsUp) {
-				return CallNextEventHandler(nextHandler, theEvent);
-			} else {
-				switch (eventKind) {
-					case kEventRawKeyDown:
-						result = Keyboard_UpdateKeyMap3(theEvent, trueblnr);
-						PostIfStoppedLowPriorityEvent();
-						break;
-					case kEventRawKeyUp:
-						result = Keyboard_UpdateKeyMap3(theEvent, falseblnr);
-						PostIfStoppedLowPriorityEvent();
-						break;
-					case kEventRawKeyModifiersChanged:
-						HandleEventModifiers(theEvent);
-						result = noErr;
-						PostIfStoppedLowPriorityEvent();
-						break;
-					default:
-						break;
-				}
-			}
-			break;
-		case 'MnvM':
-			if ('MnvM' == eventKind) {
-				CheckForSavedTasks();
-				if (! CurSpeedStopped) {
-					DoEmulateExtraTime();
-				}
-			}
-			break;
-		default:
-			break;
-	}
-	return result;
-}
-
-LOCALPROC AppendMenuConvertCStr(
-	MenuRef menu,
-	MenuCommand inCommandID,
-	char *s, blnr WantEllipsis)
-{
-	CFStringRef cfStr = UnicodeStrFromCStr(s, WantEllipsis);
-	if (NULL != cfStr) {
-		AppendMenuItemTextWithCFString(menu, cfStr,
-			0, inCommandID, NULL);
-	}
-}
-
-LOCALPROC AppendMenuSep(MenuRef menu)
-{
-	AppendMenuItemTextWithCFString(menu, NULL,
-		kMenuItemAttrSeparator, 0, NULL);
-}
-
-LOCALFUNC MenuRef NewMenuFromConvertCStr(short menuID, char *s)
-{
-	MenuRef menu = NULL;
-
-	CFStringRef cfStr = UnicodeStrFromCStr(s, falseblnr);
-	if (NULL != cfStr) {
-		OSStatus err = CreateNewMenu(menuID, 0, &menu);
-		if (err != noErr) {
-			menu = NULL;
-		} else {
-			(void) SetMenuTitleWithCFString(menu, cfStr);
-		}
-		CFRelease(cfStr);
-	}
-
-	return menu;
-}
-
-LOCALPROC RemoveCommandKeysInMenu(MenuRef theMenu)
-{
-	MenuRef outHierMenu;
-	int i;
-	UInt16 n = CountMenuItems(theMenu);
-
-	for (i = 1; i <= n; ++i) {
-		SetItemCmd(theMenu, i, 0);
-		if (noErr == GetMenuItemHierarchicalMenu(
-			theMenu, i, &outHierMenu)
-			&& (NULL != outHierMenu))
-		{
-			RemoveCommandKeysInMenu(outHierMenu);
-		}
-	}
-}
-
-LOCALFUNC blnr InstallOurMenus(void)
-{
-	MenuRef menu;
-	Str255 s;
-
-	PStrFromChar(s, (char)20);
-	menu = NewMenu(kAppleMenu, s);
-	if (menu != NULL) {
-		AppendMenuConvertCStr(menu,
-			kHICommandAbout,
-			kStrMenuItemAbout,
-			falseblnr
-			);
-		AppendMenuSep(menu);
-		InsertMenu(menu, 0);
-	}
-
-	menu = NewMenuFromConvertCStr(kFileMenu, kStrMenuFile);
-	if (menu != NULL) {
-		AppendMenuConvertCStr(menu,
-			kHICommandOpen,
-			kStrMenuItemOpen, trueblnr);
-		InsertMenu(menu, 0);
-	}
-
-	menu = NewMenuFromConvertCStr(kSpecialMenu, kStrMenuSpecial);
-	if (menu != NULL) {
-		AppendMenuConvertCStr(menu,
-			kCmdIdMoreCommands,
-			kStrMenuItemMore, trueblnr);
-		InsertMenu(menu, 0);
-	}
-
-	{
-		MenuRef outMenu;
-		MenuItemIndex outIndex;
-
-		if (noErr == GetIndMenuItemWithCommandID(
-			NULL, kHICommandQuit, 1, &outMenu, &outIndex))
-		{
-			RemoveCommandKeysInMenu(outMenu);
-		}
-	}
-
-	DrawMenuBar();
-
-	return trueblnr;
-}
-
-LOCALFUNC blnr InstallOurAppearanceClient(void)
-{
-	RegisterAppearanceClient(); /* maybe not needed ? */
-	return trueblnr;
-}
-
-LOCALFUNC blnr InstallOurEventHandlers(void)
-{
-	EventTypeSpec eventTypes[] = {
-		{kEventClassMouse, kEventMouseDown},
-		{kEventClassMouse, kEventMouseUp},
-		{kEventClassMouse, kEventMouseMoved},
-		{kEventClassMouse, kEventMouseDragged},
-		{kEventClassKeyboard, kEventRawKeyModifiersChanged},
-		{kEventClassKeyboard, kEventRawKeyDown},
-		{kEventClassKeyboard, kEventRawKeyUp},
-		{kEventClassApplication, kEventAppActivated},
-		{kEventClassApplication, kEventAppDeactivated},
-		{kEventClassCommand, kEventProcessCommand},
-		{'MnvM', 'MnvM'}
-	};
-
-	InstallApplicationEventHandler(
-		NewEventHandlerUPP(MyEventHandler),
-		GetEventTypeCount(eventTypes),
-		eventTypes, NULL, NULL);
-
-	InitKeyCodes();
-
-	InstallAppleEventHandlers();
-
-	/* (void) SetMouseCoalescingEnabled(false, NULL); */
-
-	return trueblnr;
-}
+	"text/uri-list", 0, 0
+};
 
 LOCALPROC ZapOSGLUVars(void)
 {
 	InitDrives();
+#if 0
 	{
 		int i;
 
 		for (i = 0; i < kNumMagStates; ++i) {
 			HavePositionWins[i] = falseblnr;
 		}
-#if EnableFullScreen && EnableMagnify
-		for (i = 0; i < kNumWinStates; ++i) {
-			WinMagStates[i] = kMagStateAuto;
-		}
-#endif
 	}
+#endif
 }
 
 LOCALPROC ReserveAllocAll(void)
 {
 	ReserveAllocOneBlock((ui3p *)&ROM, kROM_Size, 5, falseblnr);
 	ReserveAllocOneBlock((ui3p *)&screencomparebuff, vMacScreenNumBytes, 5, trueblnr);
+#if UseControlKeys
 	ReserveAllocOneBlock((ui3p *)&CntrlDisplayBuff, vMacScreenNumBytes, 5, falseblnr);
-#if EnableScalingBuff
-	ReserveAllocOneBlock((ui3p *)&ScalingBuff, vMacScreenNumPixels
-#if 0 != vMacScreenDepth
-		* 4
-#endif
-		, 5, falseblnr);
-#endif
-#if MySoundEnabled
-	ReserveAllocOneBlock((ui3p *)&TheSoundBuffer, dbhBufferSize, 5, falseblnr);
 #endif
 
 	EmulationReserveAlloc();
@@ -4715,27 +1452,21 @@ LOCALFUNC blnr AllocMyMemory(void)
 	return IsOk;
 }
 
+LOCALPROC UnallocMyMemory(void)
+{
+	if (nullpr != ReserveAllocBigBlock) {
+		free((char *)ReserveAllocBigBlock);
+	}
+}
+
 LOCALFUNC blnr InitOSGLU(void)
 {
 	if (AllocMyMemory())
-	if (InitMyApplInfo())
-	if (InstallOurAppearanceClient())
-	if (InstallOurEventHandlers())
-	if (InstallOurMenus())
-#if MySoundEnabled
-	if (MySound_Init())
-#endif
-	if (CreateMainWindow())
-	if (LoadMacRom())
 	if (LoadInitialImages())
-#if UseActvCode
-	if (ActvCodeInit())
-#endif
-#if MakeDumpFile
-	if (StartDump())
-#endif
-	if (InitLocationDat())
-	if (InitMyLowPriorityTasksEvent())
+	if (ScanCommandLine())
+	if (LoadMacRom())
+	/* if (ReCreateMainWindow()) */
+	if (KC2MKCInit())
 	if (InitEmulation())
 	{
 		return trueblnr;
@@ -4743,57 +1474,173 @@ LOCALFUNC blnr InitOSGLU(void)
 	return falseblnr;
 }
 
-#if MakeDumpFile && 0
-IMPORTPROC DoDumpTable(void);
-#endif
-
 LOCALPROC UnInitOSGLU(void)
 {
-#if MakeDumpFile && 0
-	DoDumpTable();
-#endif
-
 	if (MacMsgDisplayed) {
 		MacMsgDisplayOff();
 	}
 
-	if (! gTrueBackgroundFlag) {
-		CheckSavedMacMsg();
-	}
+	CheckSavedMacMsg();
 
-#if EnableFullScreen
-	UngrabMachine();
-#endif
-
-	CloseAglCurrentContext();
-	CloseMainWindow();
-#if MySoundEnabled
-	MySound_Stop();
-#endif
-
-#if EnableFullScreen
-	My_ShowMenuBar();
-#endif
-
-#if MakeDumpFile
-	EndDump();
-#endif
-
-	UnInitMyApplInfo();
-
-#if IncludePbufs
-	UnInitPbufs();
-#endif
 	UnInitDrives();
 
 	ForceShowCursor();
+
+	UnallocMyMemory();
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
+	GtkWidget *vbox;
+
+#if 0
+	GtkWidget *button;
+#endif
+
+	GtkWidget *menubar;
+	GtkWidget *the_menu;
+	GtkWidget *the_item;
+
+	gtk_init(&argc, &argv);
+
+	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	gtk_widget_set_name(window, "Test Input");
+	gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
+
+	vbox = gtk_vbox_new(FALSE, 0);
+	gtk_container_add(GTK_CONTAINER(window), vbox);
+	gtk_widget_show(vbox);
+
+	g_signal_connect(G_OBJECT(window), "delete-event",
+		G_CALLBACK(delete_event), NULL);
+	g_signal_connect(G_OBJECT(window), "focus-out-event",
+		(GCallback)focus_out_event,
+		NULL );
+	g_signal_connect(G_OBJECT(window), "focus-in-event",
+		(GCallback)focus_in_event, NULL );
+
+	g_signal_connect(G_OBJECT(window), "key-press-event",
+		G_CALLBACK(key_press_event), NULL);
+	g_signal_connect(G_OBJECT(window), "key-release-event",
+		G_CALLBACK(key_release_event), NULL);
+
+	menubar = gtk_menu_bar_new();
+
+	the_menu = gtk_menu_new();
+
+	MyAppendConvertMenuItem(the_menu,
+		G_CALLBACK(do_open_item), NULL, kStrMenuItemOpen, trueblnr);
+
+	the_item = gtk_separator_menu_item_new();
+	gtk_menu_shell_append(GTK_MENU_SHELL(the_menu), the_item);
+
+	MyAppendConvertMenuItem(the_menu,
+		G_CALLBACK(do_quit_item), NULL, kStrMenuItemQuit, falseblnr);
+
+	MyAppendSubmenuConvertName(menubar, the_menu, kStrMenuFile);
+
+	the_menu = gtk_menu_new();
+
+	MyAppendConvertMenuItem(the_menu,
+		G_CALLBACK(do_more_commands_item), NULL, kStrMenuItemMore, trueblnr);
+
+	MyAppendSubmenuConvertName(menubar, the_menu, kStrMenuSpecial);
+
+	the_menu = gtk_menu_new();
+
+	MyAppendConvertMenuItem(the_menu,
+		G_CALLBACK(do_about_item), NULL, kStrMenuItemAbout, trueblnr);
+
+	MyAppendSubmenuConvertName(menubar, the_menu, kStrMenuHelp);
+
+	gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, FALSE, 0);
+
+	gtk_widget_show_all(menubar);
+
+
+	/* Create the drawing area */
+
+	drawing_area = gtk_drawing_area_new();
+	gtk_widget_set_size_request(GTK_WIDGET(drawing_area), vMacScreenWidth, vMacScreenHeight);
+	gtk_box_pack_start(GTK_BOX(vbox), drawing_area, TRUE, TRUE, 0);
+
+	gtk_widget_show(drawing_area);
+
+	/* Signals used to handle backing pixmap */
+
+	g_signal_connect(G_OBJECT(drawing_area), "expose-event",
+		G_CALLBACK(expose_event), NULL);
+	g_signal_connect(G_OBJECT(drawing_area), "configure-event",
+		G_CALLBACK(configure_event), NULL);
+
+	/* Event signals */
+
+	g_signal_connect(G_OBJECT(drawing_area), "motion-notify-event",
+		G_CALLBACK(motion_notify_event), NULL);
+	g_signal_connect(G_OBJECT(drawing_area), "enter-notify-event",
+		G_CALLBACK(enter_notify_event), NULL);
+	g_signal_connect(G_OBJECT(drawing_area), "leave-notify-event",
+		G_CALLBACK(leave_notify_event), NULL);
+
+	g_signal_connect(G_OBJECT(drawing_area), "button-press-event",
+		G_CALLBACK(button_press_event), NULL);
+	g_signal_connect(G_OBJECT(drawing_area), "button-release-event",
+		G_CALLBACK(button_release_event), NULL);
+
+	gtk_widget_add_events(window,
+		GDK_KEY_PRESS_MASK
+		| GDK_KEY_RELEASE_MASK
+		);
+
+	gtk_widget_set_events(drawing_area, GDK_EXPOSURE_MASK
+		| GDK_LEAVE_NOTIFY_MASK
+		| GDK_BUTTON_PRESS_MASK
+		| GDK_BUTTON_RELEASE_MASK
+		| GDK_POINTER_MOTION_MASK
+		| GDK_ENTER_NOTIFY_MASK
+		| GDK_LEAVE_NOTIFY_MASK
+		| GDK_FOCUS_CHANGE_MASK
+		| GDK_KEY_PRESS_MASK
+		| GDK_KEY_RELEASE_MASK
+		/* | GDK_POINTER_MOTION_HINT_MASK */
+		);
+
+#if 0
+	/* .. And a quit button */
+	button = gtk_button_new_with_label("Quit");
+	gtk_box_pack_start(GTK_BOX(vbox), button, FALSE, FALSE, 0);
+
+	g_signal_connect_swapped(G_OBJECT(button), "clicked",
+		G_CALLBACK(delete_event), NULL
+		/* G_CALLBACK(gtk_widget_destroy),
+		G_OBJECT(window) */);
+	gtk_widget_show(button);
+#endif
+
+	gtk_drag_dest_set(drawing_area, GTK_DEST_DEFAULT_ALL,
+		&dnd_target, 1,
+		GDK_ACTION_COPY);
+	g_signal_connect(GTK_OBJECT(drawing_area), "drag-data-received",
+		G_CALLBACK(drag_data_received), NULL);
+
+	gtk_widget_show(window);
+
+	blank_pixmap = gdk_bitmap_create_from_data(NULL,
+		blank_cursor_bits, 16, 16);
+	blank_cursor = gdk_cursor_new_from_pixmap(blank_pixmap,
+		blank_pixmap, &blank_color, &blank_color, 8, 8);
+	gdk_pixmap_unref(blank_pixmap);
+
+	gdk_window_set_cursor(window->window, blank_cursor);
+
+	g_idle_add(MainEventLoop, NULL);
+
+	my_argc = argc;
+	my_argv = argv;
+
 	ZapOSGLUVars();
 	if (InitOSGLU()) {
-		RunApplicationEventLoop();
+		gtk_main ();
 	}
 	UnInitOSGLU();
 

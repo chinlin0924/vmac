@@ -7,20 +7,23 @@
 	you know what you're doing.
 */
 
-#include <Carbon/Carbon.h>
-#include <AGL/agl.h>
-#define MyAppIsBundle 1
-
-#define kMacCreatorSig 'MnvM'
-#define RomFileName "MacSE.ROM"
+#include <gtk/gtk.h>
+#include <gdk/gdkkeysyms.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <sys/time.h>
+#include <sys/times.h>
+#define RomFileName "vMac.ROM"
 #define EnableDragDrop 1
 #define EnableAltKeysMode 0
 #define SwapCommandControl 0
 #define WantInitMagnify 0
 #define WantInitFullScreen 0
 #define WantInitRunInBackground 0
-#define EnableMagnify 1
-#define EnableFullScreen 1
+#define EnableMagnify 0
+#define EnableFullScreen 0 
 #define NeedRequestInsertDisk 1
 #define NeedDoMoreCommandsMsg 1
 #define NeedDoAboutMsg 1
@@ -30,8 +33,8 @@
 /* version and other info to display to user */
 
 #define kStrAppName "Mini vMac"
-#define kAppVariationStr "minivmac-3.1.3-imch"
+#define kAppVariationStr "minivmac-3.1.3-sl86"
 #define kStrCopyrightYear "2009"
 #define kMaintainerName "unknown"
 #define kStrHomePage "http://minivmac.sourceforge.net/"
-#define kEmuName "SE 4M"
+#define kEmuName "Plus 4M"

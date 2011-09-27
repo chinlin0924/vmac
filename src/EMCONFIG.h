@@ -7,8 +7,8 @@
 	you know what you're doing.
 */
 
-#define EmClassicKbrd 0
-#define EmADB 1
+#define EmClassicKbrd 1
+#define EmADB 0
 #define EmRTC 1
 #define EmPMU 0
 #define EmVIA2 0
@@ -17,7 +17,7 @@
 #define EmMMU 0
 #define EmASC 0
 
-#define CurEmMd kEmMd_SE
+#define CurEmMd kEmMd_Plus
 
 #define kRAMa_Size 0x00200000
 #define kRAMb_Size 0x00200000
@@ -25,8 +25,8 @@
 #define IncludeVidMem 0
 
 #define EmVidCard 0
-#define IncludeExtnPbufs 1
-#define IncludeExtnHostTextClipExchange 1
+#define IncludeExtnPbufs 0
+#define IncludeExtnHostTextClipExchange 0
 
 #define Sony_SupportDC42 1
 #define Sony_SupportTags 0
@@ -50,11 +50,10 @@ enum {
 #define SoundVolb2 (Wires[Wire_VIA1_iA2_SoundVolb2])
 #define VIA1_iA2 (Wires[Wire_VIA1_iA2_SoundVolb2])
 
-	Wire_VIA1_iA4_DriveSel,
-#define VIA1_iA4 (Wires[Wire_VIA1_iA4_DriveSel])
-
-	Wire_MemOverlay,
-#define MemOverlay (Wires[Wire_MemOverlay])
+	Wire_VIA1_iA4_MemOverlay,
+#define VIA1_iA4 (Wires[Wire_VIA1_iA4_MemOverlay])
+#define MemOverlay (Wires[Wire_VIA1_iA4_MemOverlay])
+#define VIA1_iA4_ChangeNtfy MemOverlay_ChangeNtfy
 
 	Wire_VIA1_iA6_SCRNvPage2,
 #define SCRNvPage2 (Wires[Wire_VIA1_iA6_SCRNvPage2])
@@ -83,30 +82,29 @@ enum {
 #define VIA1_iB2 (Wires[Wire_VIA1_iB2_RTCunEnabled])
 #define VIA1_iB2_ChangeNtfy RTCunEnabled_ChangeNtfy
 
-	Wire_VIA1_iA3_SCCvSync,
-#define VIA1_iA3 (Wires[Wire_VIA1_iA3_SCCvSync])
+	Wire_VIA1_iA3_SoundBuffer,
+#define SoundBuffer (Wires[Wire_VIA1_iA3_SoundBuffer])
+#define VIA1_iA3 (Wires[Wire_VIA1_iA3_SoundBuffer])
 
-	Wire_VIA1_iB3_ADBint,
-#define VIA1_iB3 (Wires[Wire_VIA1_iB3_ADBint])
-#define ADB_Int (Wires[Wire_VIA1_iB3_ADBint])
+	Wire_VIA1_iB3_MouseBtnUp,
+#define MouseBtnUp (Wires[Wire_VIA1_iB3_MouseBtnUp])
+#define VIA1_iB3 (Wires[Wire_VIA1_iB3_MouseBtnUp])
 
-	Wire_VIA1_iB4_ADB_st0,
-#define VIA1_iB4 (Wires[Wire_VIA1_iB4_ADB_st0])
-#define ADB_st0 (Wires[Wire_VIA1_iB4_ADB_st0])
-#define VIA1_iB4_ChangeNtfy ADBstate_ChangeNtfy
+	Wire_VIA1_iB4_MouseX2,
+#define MouseX2 (Wires[Wire_VIA1_iB4_MouseX2])
+#define VIA1_iB4 (Wires[Wire_VIA1_iB4_MouseX2])
 
-	Wire_VIA1_iB5_ADB_st1,
-#define VIA1_iB5 (Wires[Wire_VIA1_iB5_ADB_st1])
-#define ADB_st1 (Wires[Wire_VIA1_iB5_ADB_st1])
-#define VIA1_iB5_ChangeNtfy ADBstate_ChangeNtfy
+	Wire_VIA1_iB5_MouseY2,
+#define MouseY2 (Wires[Wire_VIA1_iB5_MouseY2])
+#define VIA1_iB5 (Wires[Wire_VIA1_iB5_MouseY2])
 
 	Wire_VIA1_iCB2_KybdDat,
 #define VIA1_iCB2 (Wires[Wire_VIA1_iCB2_KybdDat])
-#define ADB_Data (Wires[Wire_VIA1_iCB2_KybdDat])
-#define VIA1_iCB2_ChangeNtfy ADB_DataLineChngNtfy
+#define VIA1_iCB2_ChangeNtfy Kybd_DataLineChngNtfy
 
-	Wire_VIA1_iB6_SCSIintenable,
-#define VIA1_iB6 (Wires[Wire_VIA1_iB6_SCSIintenable])
+	Wire_VIA1_iB6_SCRNbeamInVid,
+#define SCRNbeamInVid (Wires[Wire_VIA1_iB6_SCRNbeamInVid])
+#define VIA1_iB6 (Wires[Wire_VIA1_iB6_SCRNbeamInVid])
 
 	Wire_VIA1_iB7_SoundDisable,
 #define SoundDisable (Wires[Wire_VIA1_iB7_SoundDisable])
@@ -120,9 +118,6 @@ enum {
 #define SCCInterruptRequest (Wires[Wire_SCCInterruptRequest])
 #define SCCinterruptChngNtfy VIAorSCCinterruptChngNtfy
 
-	Wire_ADBMouseDisabled,
-#define ADBMouseDisabled (Wires[Wire_ADBMouseDisabled])
-
 	kNumWires
 };
 
@@ -132,21 +127,21 @@ enum {
 #define VIA1_ORB_FloatVal 0xFF
 #define VIA1_ORA_CanIn 0x80
 #define VIA1_ORA_CanOut 0x7F
-#define VIA1_ORB_CanIn 0x09
-#define VIA1_ORB_CanOut 0xF7
-#define VIA1_IER_Never0 0x00
+#define VIA1_ORB_CanIn 0x79
+#define VIA1_ORB_CanOut 0x87
+#define VIA1_IER_Never0 (1 << 1)
 #define VIA1_IER_Never1 ((1 << 3) | (1 << 4))
 #define VIA1_CB2modesAllowed 0x01
 #define VIA1_CA2modesAllowed 0x01
 
-#define Mouse_Enabled() (! ADBMouseDisabled)
+#define Mouse_Enabled SCC_InterruptsEnabled
 
 #define RTC_OneSecond_PulseNtfy VIA1_iCA2_PulseNtfy
 
 #define GetSoundInvertTime VIA1_GetT1InvertTime
 
-#define ADB_ShiftInData VIA1_ShiftOutData
-#define ADB_ShiftOutData VIA1_ShiftInData
+#define KYBD_ShiftInData VIA1_ShiftOutData
+#define KYBD_ShiftOutData VIA1_ShiftInData
 
 #define kCheckSumRom_Size kTrueROM_Size
 
