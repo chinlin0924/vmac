@@ -1,0 +1,30 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "3DEC3A3CE9A55079C7AA498ECB9EB0F109854F90",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "66020812E25F835F7E461E1F36EFF9E212E74787" : 0,
+    "3DEC3A3CE9A55079C7AA498ECB9EB0F109854F90" : 0
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "2814AFF6-1B1F-4873-BB7B-D81AE93E2D15",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "66020812E25F835F7E461E1F36EFF9E212E74787" : "",
+    "3DEC3A3CE9A55079C7AA498ECB9EB0F109854F90" : "vmac\/"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "minivmac",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "minivmac.xcodeproj",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/chinlin0924\/vmac.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "3DEC3A3CE9A55079C7AA498ECB9EB0F109854F90"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "git:\/\/git.projects.genivi.org\/smartdevicelink_ios.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "66020812E25F835F7E461E1F36EFF9E212E74787"
+    }
+  ]
+}

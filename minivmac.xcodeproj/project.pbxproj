@@ -222,6 +222,13 @@
 /* Begin PBXProject section */
 		001A00000000000000000000 /* Project object */ = {
 			isa = PBXProject;
+			attributes = {
+				TargetAttributes = {
+					001900000000000000000000 = {
+						DevelopmentTeam = 6VAZGSKA8H;
+					};
+				};
+			};
 			buildConfigurationList = 002300000000000000000000 /* Build configuration list for PBXProject "minivmac" */;
 			compatibilityVersion = "Xcode 3.1";
 			developmentRegion = English;
@@ -293,7 +300,8 @@
 		002000000000000000000000 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = i386;
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				CODE_SIGN_IDENTITY = "";
 				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)";
 				COPY_PHASE_STRIP = NO;
 				DEPLOYMENT_POSTPROCESSING = YES;
@@ -306,14 +314,14 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = NO;
 				GCC_PREFIX_HEADER = "";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				GCC_VERSION = 4.0;
+				GCC_VERSION = "";
 				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
 				INFOPLIST_FILE = src/Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
 				MACOSX_DEPLOYMENT_TARGET = 10.4;
 				PREBINDING = NO;
 				PRODUCT_NAME = minivmac;
-				SDKROOT = macosx10.5;
+				SDKROOT = macosx;
 				SEPARATE_STRIP = YES;
 				STRIPFLAGS = "-u -r";
 				STRIP_INSTALLED_PRODUCT = YES;
@@ -328,6 +336,9 @@
 		002100000000000000000000 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx10.11;
 			};
 			name = Release;
 		};
